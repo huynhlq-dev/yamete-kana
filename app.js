@@ -45,6 +45,140 @@ function cardKey(card) {
 }
 
 // ============================================================
+// DIALOG SYSTEM — những câu bựa vui vẻ giữa các chuyển cảnh
+// ============================================================
+const DIALOG_MESSAGES = {
+  correct: [
+    "Đúng rồi, giỏi quá… muốn thưởng gì?",
+    "Ngon đấy, được cái headpat",
+  ],
+  wrong: [
+    "Sai rồi đồ đần",
+    "Yamete… não để ở nhà à?",
+  ],
+  lessonComplete: [
+    "Xong bài rồi à? Ngoan đấy",
+    "Cleared. Được phép thở",
+  ],
+  allRowsComplete: [
+    "Học xong 46 chữ rồi. Giờ muốn yamete cũng muộn",
+  ],
+  quizStart: [
+    "Vào chịu tội 20 câu",
+  ],
+  quizHighScore: [
+    "Thánh rồi, yamete kudasai",
+  ],
+  quizLowScore: [
+    "Thảm họa. Về liếm bài từ đầu",
+  ],
+};
+
+let lastDialogMessage = null;
+let currentToast = null;
+let currentToastTimer = null;
+
+function showToast(category) {
+  const messages = DIALOG_MESSAGES[category];
+  if (!messages || messages.length === 0) return;
+
+  let chosen = messages[Math.floor(Math.random() * messages.length)];
+  if (messages.length > 1) {
+    while (chosen === lastDialogMessage) {
+      chosen = messages[Math.floor(Math.random() * messages.length)];
+    }
+  }
+  lastDialogMessage = chosen;
+
+  // Toast trước đó (nếu còn) bị thay ngay, tránh chồng đè khi bấm nhanh liên tục
+  if (currentToast) {
+    clearTimeout(currentToastTimer);
+    currentToast.remove();
+    currentToast = null;
+  }
+
+  const toast = document.createElement("div");
+  toast.className = "toast";
+  toast.textContent = chosen;
+  document.body.appendChild(toast);
+  currentToast = toast;
+
+  currentToastTimer = setTimeout(() => {
+    toast.classList.add("exiting");
+    setTimeout(() => {
+      toast.remove();
+      if (currentToast === toast) currentToast = null;
+    }, 200);
+  }, 1800 + Math.random() * 400);
+}
+
+// ============================================================
+// LESSON PROGRESS — trạng thái từng bài học (1–14), theo phạm vi đang chọn
+// ============================================================
+const LESSON_PROGRESS_KEY = "kana_quiz_lesson_progress_v1";
+
+function loadLessonProgress() {
+  try {
+    return JSON.parse(localStorage.getItem(LESSON_PROGRESS_KEY)) || {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveLessonProgress(progress) {
+  localStorage.setItem(LESSON_PROGRESS_KEY, JSON.stringify(progress));
+}
+
+// vd: "hiragana_vowel", "both_stroke_easy" — mỗi phạm vi (hiragana/katakana/both) có tiến độ riêng
+function lessonProgressKey(scope, lessonKey) {
+  return `${scope}_${lessonKey}`;
+}
+
+// "not_started" | "in_progress" | "completed"
+function getLessonStatus(scope, lessonKey) {
+  return loadLessonProgress()[lessonProgressKey(scope, lessonKey)] || "not_started";
+}
+
+// Không cho trạng thái lùi lại: học lại 1 bài đã "completed" không hạ về "in_progress"
+function setLessonStatus(scope, lessonKey, status) {
+  const progress = loadLessonProgress();
+  const key = lessonProgressKey(scope, lessonKey);
+  if (progress[key] === "completed" && status === "in_progress") return;
+  progress[key] = status;
+  saveLessonProgress(progress);
+}
+
+// Số bài trong 10 bài đầu (1–10) đã hoàn thành — điều kiện mở khóa bài 11–14
+function countCompletedRowLessons(scope) {
+  return LESSONS.filter((l) => l.kind === "row" && getLessonStatus(scope, l.key) === "completed").length;
+}
+
+function isStrokeLessonsUnlocked(scope) {
+  return countCompletedRowLessons(scope) >= STROKE_LESSONS_UNLOCK_COUNT;
+}
+
+// Các nhóm phụ âm đã "học xong" (bài 1-10 hoàn thành) — nguồn chữ để ôn ở bài 11–14
+function getLearnedGroups(scope) {
+  return new Set(
+    LESSONS.filter((l) => l.kind === "row" && getLessonStatus(scope, l.key) === "completed").map((l) => l.key)
+  );
+}
+
+// Danh sách chữ của 1 bài học theo phạm vi hiện tại (hiragana/katakana/cả hai)
+function getLessonCardPool(lesson, scope) {
+  const types = scope === "both" ? ["hiragana", "katakana"] : [scope];
+  const basePool = types.flatMap((t) => (t === "hiragana" ? HIRAGANA : KATAKANA));
+
+  if (lesson.kind === "row") {
+    return basePool.filter((c) => c.group === lesson.key);
+  }
+
+  // kind === "stroke": chỉ ôn chữ đã học (thuộc nhóm đã hoàn thành), lọc theo strokeLevel/lookalike
+  const learnedGroups = getLearnedGroups(scope);
+  return basePool.filter((c) => c[lesson.filterField] === lesson.filterValue && learnedGroups.has(c.group));
+}
+
+// ============================================================
 // STATE — trạng thái toàn cục của app
 // ============================================================
 const state = {
@@ -52,8 +186,7 @@ const state = {
   screen: "home",
 
   study: {
-    groups: GROUPS.map((g) => g.key), // các nhóm đang được chọn để học
-    reviewOnly: false, // chỉ ôn chữ chưa thuộc
+    lesson: null, // bài học đang học (1 phần tử của LESSONS), null nếu đang ôn danh sách tùy chỉnh
     customList: null, // khác null khi đang ôn 1 danh sách cố định (vd: ôn câu sai từ bài thi)
     sessionCards: [], // toàn bộ danh sách của phiên học hiện tại
     queue: [], // các thẻ flashcard còn lại phải học
@@ -107,43 +240,66 @@ function getPool(scope) {
 function scopeLabel(scope) {
   if (scope === "hiragana") return "Hiragana";
   if (scope === "katakana") return "Katakana";
-  return "Cả hai";
+  return "Cả 2 (tham lam)";
 }
 
 // ============================================================
 // RENDER — chọn màn hình hiện tại để hiển thị
 // ============================================================
+// Độ rộng khung chứa: màn "lessons" cần rộng hơn để lưới bài học dùng tốt không gian
+// trên desktop/tablet; các màn còn lại giữ cột hẹp căn giữa (tự nhiên vẫn mobile-first).
+function containerClass(screen) {
+  return screen === "lessons" ? "min-h-screen max-w-md sm:max-w-2xl lg:max-w-3xl mx-auto" : "min-h-screen max-w-md mx-auto";
+}
+
+// Thanh header xuyên suốt mọi màn hình — luôn hiện tên app, sticky khi cuộn.
+function renderAppHeader() {
+  return `
+    <div class="sticky top-0 z-40 bg-teal-700 text-white px-4 py-2.5 flex items-center justify-center shadow-md">
+      <span class="font-bold text-base tracking-wide">🔥 YAMATE KANA</span>
+    </div>
+  `;
+}
+
 function render() {
   const app = document.getElementById("app");
+  app.className = containerClass(state.screen);
+  let screenHtml = "";
   switch (state.screen) {
     case "home":
-      app.innerHTML = renderHome();
+      screenHtml = renderHome();
+      break;
+    case "lessons":
+      screenHtml = renderLessons();
       break;
     case "study-flashcard":
-      app.innerHTML = renderStudyFlashcard();
-      activateFlashcardFlip();
+      screenHtml = renderStudyFlashcard();
       break;
     case "study-matching":
-      app.innerHTML = renderStudyMatching();
+      screenHtml = renderStudyMatching();
       break;
     case "study-complete":
-      app.innerHTML = renderStudyComplete();
+      screenHtml = renderStudyComplete();
       break;
     case "quiz":
-      app.innerHTML = renderQuiz();
+      screenHtml = renderQuiz();
       break;
     case "quiz-result":
-      app.innerHTML = renderQuizResult();
+      screenHtml = renderQuizResult();
       break;
   }
+  app.innerHTML = renderAppHeader() + screenHtml;
+  if (state.screen === "study-flashcard") activateFlashcardFlip();
   window.scrollTo(0, 0);
 }
 
-// Header dùng chung cho các màn không phải Home (nút quay lại)
-function renderBackHeader(title) {
+// Header dùng chung cho các màn không phải Home (nút quay lại).
+// backAction mặc định về Home; các màn học theo bài (flashcard/ghép cặp) truyền "go-lessons"
+// để quay lại đúng màn chọn bài thay vì nhảy hẳn về Home.
+function renderBackHeader(title, backAction = "go-home") {
   return `
     <div class="flex items-center gap-3 px-4 pt-4 pb-2">
-      <button data-action="go-home" aria-label="Về trang chủ"
+      <button data-action="${backAction}" aria-label="Quay lại"
         class="w-10 h-10 flex items-center justify-center rounded-full bg-white shadow active:scale-90 transition text-teal-700 text-xl shrink-0">
         ←
       </button>
@@ -158,50 +314,48 @@ function renderBackHeader(title) {
 function renderHome() {
   const hs = loadHighscores()[state.scope];
   const highscoreText = hs
-    ? `Điểm cao nhất: ${hs.score}/${hs.total} (${Math.round((hs.score / hs.total) * 100)}%)`
-    : "Chưa có điểm — hãy thử thi 20 câu!";
+    ? `Đỉnh cao hiện tại: ${hs.score}/${hs.total} (${Math.round((hs.score / hs.total) * 100)}%) — ngon, đừng ảo`
+    : "Chưa thi lần nào, sợ à?";
 
   const scopes = [
     { key: "hiragana", label: "Hiragana" },
     { key: "katakana", label: "Katakana" },
-    { key: "both", label: "Cả hai" },
+    { key: "both", label: "Cả 2 (tham lam)" },
   ];
 
   return `
-    <div class="flex flex-col min-h-screen px-5 pt-10 pb-8">
+    <div class="flex flex-col min-h-screen px-5 pt-8 pb-8">
       <div class="text-center mb-8">
         <div class="text-5xl mb-2">🇯🇵</div>
-        <h1 class="text-2xl font-bold text-ink">Học Hiragana &amp; Katakana</h1>
-        <p class="text-ink-soft mt-1 text-sm">Luyện chữ cái tiếng Nhật mỗi ngày</p>
+        <p class="text-ink-soft mt-1 text-sm">Học đi đồ lười, để lâu não mốc</p>
       </div>
 
       <div class="bg-white rounded-2xl shadow-md p-4 mb-6">
-        <p class="text-sm font-medium text-ink-soft mb-2">Chọn bảng chữ</p>
+        <p class="text-sm font-medium text-ink-soft mb-2">Chọn bảng chữ, lẹ lên!</p>
         <div class="grid grid-cols-3 gap-2">
           ${scopes
-            .map(
-              (s) => `
+      .map(
+        (s) => `
             <button data-action="set-scope" data-scope="${s.key}"
-              class="py-3 rounded-xl text-sm font-semibold transition active:scale-95 ${
-                state.scope === s.key
-                  ? "bg-teal-700 text-white shadow"
-                  : "bg-cream-border text-ink-soft"
-              }">
+              class="py-3 rounded-xl text-sm font-semibold transition active:scale-95 ${state.scope === s.key
+            ? "bg-teal-700 text-white shadow"
+            : "bg-cream-border text-ink-soft"
+          }">
               ${s.label}
             </button>`
-            )
-            .join("")}
+      )
+      .join("")}
         </div>
       </div>
 
       <div class="flex flex-col gap-4 mt-2">
         <button data-action="go-study"
           class="w-full py-5 rounded-2xl bg-teal-700 text-white text-xl font-semibold shadow-lg active:scale-95 transition">
-          📖 Học
+          📖 Vào học đi đồ lười
         </button>
         <button data-action="go-quiz"
           class="w-full py-5 rounded-2xl bg-saffron-500 text-ink text-xl font-semibold shadow-lg active:scale-95 transition">
-          📝 Thi 20 câu
+          📝 Vào chịu tội 20 câu
         </button>
       </div>
 
@@ -215,32 +369,96 @@ function renderHome() {
 }
 
 // ============================================================
+// MÀN CHỌN BÀI HỌC (1–14)
+// ============================================================
+
+function renderLessonStatusBadge(status) {
+  if (status === "completed")
+    return `<span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-status-ok/10 text-status-ok whitespace-nowrap">✓ Xong, ngoan</span>`;
+  if (status === "in_progress")
+    return `<span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-saffron-100 text-saffron-700 whitespace-nowrap">● Học dở, ráng lên</span>`;
+  return `<span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-cream-border text-ink-faint whitespace-nowrap">Chưa sờ tới</span>`;
+}
+
+function renderLessonCard(lesson, scope, unlocked) {
+  const locked = lesson.kind === "stroke" && !unlocked;
+  const status = getLessonStatus(scope, lesson.key);
+  const count = getLessonCardPool(lesson, scope).length;
+
+  return `
+    <button data-action="start-lesson" data-lesson-id="${lesson.id}" ${locked ? "disabled" : ""}
+      class="text-left p-4 rounded-2xl shadow bg-white transition active:scale-95 flex flex-col gap-2 ${locked ? "opacity-50" : ""
+    }">
+      <div class="flex items-start justify-between gap-2">
+        <span class="text-xs font-semibold text-ink-faint">Bài ${lesson.id}</span>
+        ${locked ? `<span class="text-base leading-none">🔒</span>` : renderLessonStatusBadge(status)}
+      </div>
+      <div>
+        <p class="font-semibold text-ink">${lesson.title}</p>
+        ${lesson.subtitle ? `<p class="text-xs text-ink-faint mt-0.5">${lesson.subtitle}</p>` : ""}
+      </div>
+      <p class="text-xs text-ink-soft">${count} chữ</p>
+    </button>
+  `;
+}
+
+function renderLessons() {
+  const scope = state.scope;
+  const rowLessons = LESSONS.filter((l) => l.kind === "row");
+  const strokeLessons = LESSONS.filter((l) => l.kind === "stroke");
+  const completedRows = countCompletedRowLessons(scope);
+  const unlocked = isStrokeLessonsUnlocked(scope);
+
+  return `
+    ${renderBackHeader("Chọn Bài Học (Hay Trốn Tiếp?)")}
+    <div class="px-4 pb-8">
+      <p class="text-center text-sm text-ink-soft font-medium mb-5">Phạm vi: ${scopeLabel(scope)} — ráng mà nhớ</p>
+
+      <h2 class="text-xs font-semibold text-ink-faint uppercase tracking-wide mb-3">Học Theo Hàng (Dễ Ẹc)</h2>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-8">
+        ${rowLessons.map((l) => renderLessonCard(l, scope, true)).join("")}
+      </div>
+
+      <h2 class="text-xs font-semibold text-ink-faint uppercase tracking-wide mb-1">Luyện Nét &amp; Hình (Khó Đấy)</h2>
+      ${unlocked
+      ? ""
+      : `<p class="text-xs text-ink-faint mb-3">🔒 Học xong ${completedRows}/${STROKE_LESSONS_UNLOCK_COUNT} bài đã, đòi gì mở khóa</p>`
+    }
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-3 ${unlocked ? "mt-3" : ""}">
+        ${strokeLessons.map((l) => renderLessonCard(l, scope, unlocked)).join("")}
+      </div>
+    </div>
+  `;
+}
+
+// ============================================================
 // HỌC — GIAI ĐOẠN 1: FLASHCARD
 // ============================================================
 
-// Tính danh sách chữ theo bộ lọc nhóm + tùy chọn "chỉ ôn chữ chưa thuộc"
-function getFilteredStudyPool() {
-  const s = state.study;
-  let pool = getPool(state.scope).filter((c) => s.groups.includes(c.group));
-  if (s.reviewOnly) {
-    const progress = loadProgress();
-    pool = pool.filter((c) => progress[cardKey(c)] !== "known");
-  }
-  return pool;
-}
+// Bắt đầu học 1 bài (1–14). Bài "stroke" bị khóa thì bỏ qua (phòng khi UI chưa kịp ẩn nút).
+function startLesson(lessonId) {
+  const lesson = LESSONS.find((l) => l.id === lessonId);
+  if (!lesson) return;
+  if (lesson.kind === "stroke" && !isStrokeLessonsUnlocked(state.scope)) return;
 
-// Bắt đầu 1 phiên học bình thường (từ màn Home), dùng toàn bộ nhóm mặc định
-function beginNormalStudy() {
+  const cards = getLessonCardPool(lesson, state.scope);
+  const shuffled = shuffle(cards);
+  state.study.lesson = lesson;
   state.study.customList = null;
-  state.study.reviewOnly = false;
-  state.study.groups = GROUPS.map((g) => g.key);
-  rebuildFlashcardQueue();
+  state.study.sessionCards = cards;
+  state.study.current = shuffled.shift() || null;
+  state.study.queue = shuffled;
+  state.study.flipped = false;
+
+  setLessonStatus(state.scope, lesson.key, "in_progress");
   state.screen = "study-flashcard";
   render();
 }
 
-// Bắt đầu phiên học với 1 danh sách cố định (dùng khi "Ôn các câu sai")
+// Bắt đầu phiên học với 1 danh sách cố định (dùng khi "Ôn các câu sai" từ bài thi) —
+// không gắn với bài học nào nên không ảnh hưởng tiến độ hoàn thành bài.
 function beginCustomStudy(cards) {
+  state.study.lesson = null;
   state.study.customList = cards;
   state.study.sessionCards = cards;
   const shuffled = shuffle(cards);
@@ -248,35 +466,6 @@ function beginCustomStudy(cards) {
   state.study.queue = shuffled;
   state.study.flipped = false;
   state.screen = "study-flashcard";
-  render();
-}
-
-// Dựng lại hàng đợi flashcard mỗi khi đổi bộ lọc nhóm / "chỉ ôn chữ chưa thuộc"
-function rebuildFlashcardQueue() {
-  if (state.study.customList) return; // danh sách cố định thì không áp dụng bộ lọc
-  const cards = getFilteredStudyPool();
-  const shuffled = shuffle(cards);
-  state.study.sessionCards = cards;
-  state.study.current = shuffled.shift() || null;
-  state.study.queue = shuffled;
-  state.study.flipped = false;
-}
-
-function toggleGroup(group) {
-  const s = state.study;
-  const idx = s.groups.indexOf(group);
-  if (idx >= 0) {
-    if (s.groups.length > 1) s.groups.splice(idx, 1); // luôn giữ ít nhất 1 nhóm
-  } else {
-    s.groups.push(group);
-  }
-  rebuildFlashcardQueue();
-  render();
-}
-
-function toggleReviewOnly() {
-  state.study.reviewOnly = !state.study.reviewOnly;
-  rebuildFlashcardQueue();
   render();
 }
 
@@ -306,31 +495,33 @@ function nextFlashcard() {
 function renderStudyFlashcard() {
   const s = state.study;
   const card = s.current;
+  const backAction = s.lesson ? "go-lessons" : "go-home";
 
   if (!card) {
-    // Không có chữ nào khớp bộ lọc hiện tại
+    // Chỉ có thể xảy ra với bài luyện nét (11–14) nếu các nhóm đã hoàn thành chưa
+    // đụng tới chữ nào được gắn strokeLevel/lookalike đó — gợi ý học thêm rồi quay lại.
     return `
-      ${renderBackHeader("Học — Flashcard")}
+      ${renderBackHeader("Lật Thẻ — Đừng Lười", backAction)}
       <div class="px-5 text-center mt-16">
         <p class="text-5xl mb-4">🤷</p>
-        <p class="text-ink-soft font-medium">Không có chữ nào phù hợp với bộ lọc hiện tại.</p>
-        <p class="text-ink-faint text-sm mt-1">Hãy chọn thêm nhóm hoặc tắt "chỉ ôn chữ chưa thuộc".</p>
+        <p class="text-ink-soft font-medium">Học chưa đủ mà đòi ôn, láo vừa thôi.</p>
+        <p class="text-ink-faint text-sm mt-1">Về học thêm vài bài "Học Theo Hàng" đi rồi hẵng quay lại.</p>
       </div>
-      ${!s.customList ? renderGroupFilters() : ""}
     `;
   }
 
   const doneCount = s.sessionCards.length - s.queue.length - 1;
   const progressText = `${doneCount + 1}/${s.sessionCards.length}`;
+  const lessonLabel = s.customList
+    ? `🔁 Đang liếm lại ${s.customList.length} câu sai đây này`
+    : s.lesson
+      ? `📖 Bài ${s.lesson.id}: ${s.lesson.title} (im mà học)`
+      : "";
 
   return `
-    ${renderBackHeader("Học — Flashcard")}
+    ${renderBackHeader("Lật Thẻ — Đừng Lười", backAction)}
     <div class="px-5 pb-8">
-      ${
-        s.customList
-          ? `<p class="text-center text-sm font-medium text-teal-700 mb-3">🔁 Đang ôn ${s.customList.length} câu sai từ bài thi</p>`
-          : renderGroupFilters()
-      }
+      ${lessonLabel ? `<p class="text-center text-sm font-medium text-teal-700 mb-3">${lessonLabel}</p>` : ""}
 
       <p class="text-center text-sm text-ink-faint font-medium mb-3">${progressText}</p>
 
@@ -346,20 +537,19 @@ function renderStudyFlashcard() {
         </div>
       </div>
 
-      ${
-        !s.flipped
-          ? `<button data-action="flip-card" class="w-full py-4 rounded-2xl bg-teal-700 text-white text-lg font-semibold shadow active:scale-95 transition mb-3">
-               Lật thẻ
+      ${!s.flipped
+      ? `<button data-action="flip-card" class="w-full py-4 rounded-2xl bg-teal-700 text-white text-lg font-semibold shadow active:scale-95 transition mb-3">
+               Lật Đi, Sợ Gì
              </button>`
-          : `<div class="grid grid-cols-2 gap-3">
+      : `<div class="grid grid-cols-2 gap-3">
                <button data-action="mark-unknown" class="py-4 rounded-2xl bg-status-busy text-white text-lg font-semibold shadow active:scale-95 transition">
-                 ❌ Chưa nhớ
+                 ❌ Chưa nhớ + đầu đất
                </button>
                <button data-action="mark-known" class="py-4 rounded-2xl bg-status-ok text-white text-lg font-semibold shadow active:scale-95 transition">
-                 ✅ Đã nhớ
+                 ✅ Nhớ rồi (hy vọng không não cá)
                </button>
              </div>`
-      }
+    }
     </div>
   `;
 }
@@ -377,33 +567,6 @@ function activateFlashcardFlip() {
       inner.classList.add("is-flipped");
     });
   });
-}
-
-// Thanh chọn nhóm + checkbox "chỉ ôn chữ chưa thuộc"
-function renderGroupFilters() {
-  const s = state.study;
-  return `
-    <div class="mb-4">
-      <div class="flex flex-wrap gap-2 justify-center mb-3">
-        ${GROUPS.map(
-          (g) => `
-          <button data-action="toggle-group" data-group="${g.key}"
-            class="px-3 py-1.5 rounded-full text-sm font-semibold transition active:scale-95 ${
-              s.groups.includes(g.key)
-                ? "bg-teal-700 text-white"
-                : "bg-cream-border text-ink-soft"
-            }">
-            ${g.label}
-          </button>`
-        ).join("")}
-      </div>
-      <label class="flex items-center justify-center gap-2 text-sm text-ink-soft font-medium">
-        <input type="checkbox" id="review-only-checkbox" ${s.reviewOnly ? "checked" : ""}
-          class="w-5 h-5 accent-teal-700" />
-        Chỉ ôn chữ chưa thuộc
-      </label>
-    </div>
-  `;
 }
 
 // ============================================================
@@ -465,6 +628,7 @@ function tryMatch() {
     m.lastCorrect = key;
     m.locked = true;
     render();
+    showToast("correct");
     setTimeout(() => {
       m.matchedKeys.add(key);
       m.selectedLeft = null;
@@ -477,6 +641,15 @@ function tryMatch() {
         if (m.queueRemaining.length > 0) {
           loadNextMatchingRound();
         } else {
+          if (state.study.lesson) {
+            setLessonStatus(state.scope, state.study.lesson.key, "completed");
+            const completedCount = countCompletedRowLessons(state.scope);
+            if (completedCount === 10) {
+              showToast("allRowsComplete");
+            } else {
+              showToast("lessonComplete");
+            }
+          }
           state.screen = "study-complete";
         }
       }
@@ -487,6 +660,7 @@ function tryMatch() {
     m.lastWrong = { left: m.selectedLeft, right: m.selectedRight };
     m.locked = true;
     render();
+    showToast("wrong");
     setTimeout(() => {
       m.selectedLeft = null;
       m.selectedRight = null;
@@ -540,10 +714,10 @@ function renderStudyMatching() {
     .join("");
 
   return `
-    ${renderBackHeader("Học — Ghép cặp")}
+    ${renderBackHeader("Ghép Cặp — Lẹ Lên Não Cá", state.study.lesson ? "go-lessons" : "go-home")}
     <div class="px-4 pb-8">
       <p class="text-center text-sm text-ink-faint font-medium mb-4">
-        Đã ghép ${totalDone}/${state.study.sessionCards.length} · Chọn 1 chữ Nhật + 1 romaji để ghép
+        Ghép được ${totalDone}/${state.study.sessionCards.length} rồi đấy · Chọn 1 chữ + 1 âm, đừng bấm bừa
       </p>
       <div class="grid grid-cols-2 gap-3">
         <div class="flex flex-col gap-3">${leftHtml}</div>
@@ -557,22 +731,27 @@ function renderStudyMatching() {
 // HỌC — HOÀN THÀNH SESSION
 // ============================================================
 function renderStudyComplete() {
+  const s = state.study;
+  const summary = s.lesson
+    ? `Học xong bài "${s.lesson.title}" (${s.sessionCards.length} chữ) rồi à, tưởng bỏ cuộc chứ.`
+    : `Liếm lại xong ${s.sessionCards.length} câu sai rồi đó, nhớ chưa?`;
+
   return `
     <div class="flex flex-col items-center justify-center min-h-screen px-6 text-center">
       <div class="text-6xl mb-4">🎉</div>
-      <h2 class="text-2xl font-bold text-ink mb-2">Hoàn thành phiên học!</h2>
-      <p class="text-ink-soft mb-8">Bạn đã học xong ${state.study.sessionCards.length} chữ. Tiếp tục luyện tập nhé!</p>
+      <h2 class="text-2xl font-bold text-ink mb-2">Xong Rồi Đấy À? Ngoan Ghê</h2>
+      <p class="text-ink-soft mb-8">${summary} Học tiếp đi, đừng có lười!</p>
       <div class="w-full flex flex-col gap-3 max-w-xs">
         <button data-action="continue-study"
           class="w-full py-4 rounded-2xl bg-teal-700 text-white text-lg font-semibold shadow active:scale-95 transition">
-          📖 Học tiếp
+          📖 Học Tiếp Đi Đồ Lười
         </button>
         <button data-action="go-quiz"
           class="w-full py-4 rounded-2xl bg-saffron-500 text-ink text-lg font-semibold shadow active:scale-95 transition">
-          📝 Đi thi 20 câu
+          📝 Vào Chịu Tội Tiếp
         </button>
         <button data-action="go-home" class="w-full py-3 text-ink-faint font-medium">
-          Về trang chủ
+          Trốn Về Nhà
         </button>
       </div>
     </div>
@@ -580,13 +759,10 @@ function renderStudyComplete() {
 }
 
 function continueStudy() {
-  if (state.study.customList) {
-    beginNormalStudy();
-  } else {
-    rebuildFlashcardQueue();
-    state.screen = "study-flashcard";
-    render();
-  }
+  state.study.lesson = null;
+  state.study.customList = null;
+  state.screen = "lessons";
+  render();
 }
 
 // ============================================================
@@ -634,6 +810,7 @@ function beginQuiz() {
   state.quiz.selected = null;
   state.screen = "quiz";
   render();
+  setTimeout(() => showToast("quizStart"), 300);
 }
 
 function answerQuiz(optionIdx) {
@@ -643,8 +820,10 @@ function answerQuiz(optionIdx) {
   const chosen = q.options[optionIdx];
   if (chosen === q.card) {
     state.quiz.score++;
+    showToast("correct");
   } else {
     state.quiz.wrong.push({ card: q.card, direction: q.direction, userAnswer: chosen });
+    showToast("wrong");
   }
   render();
 }
@@ -668,6 +847,13 @@ function finishQuiz() {
   }
   state.screen = "quiz-result";
   render();
+  setTimeout(() => {
+    if (state.quiz.score >= 18) {
+      showToast("quizHighScore");
+    } else if (state.quiz.score < 10) {
+      showToast("quizLowScore");
+    }
+  }, 300);
 }
 
 function renderQuiz() {
@@ -701,7 +887,7 @@ function renderQuiz() {
   const isLast = state.quiz.currentIndex + 1 >= state.quiz.questions.length;
 
   return `
-    ${renderBackHeader("Thi 20 câu")}
+    ${renderBackHeader("Chịu Tội 20 Câu")}
     <div class="px-5 pb-8">
       <div class="flex justify-between items-center text-sm font-medium text-ink-faint mb-4">
         <span>Câu ${state.quiz.currentIndex + 1}/${state.quiz.questions.length}</span>
@@ -709,9 +895,8 @@ function renderQuiz() {
       </div>
 
       <div class="w-full h-2 bg-cream-border rounded-full mb-6 overflow-hidden">
-        <div class="h-full bg-teal-700 transition-all" style="width: ${
-          ((state.quiz.currentIndex + (selected !== null ? 1 : 0)) / state.quiz.questions.length) * 100
-        }%"></div>
+        <div class="h-full bg-teal-700 transition-all" style="width: ${((state.quiz.currentIndex + (selected !== null ? 1 : 0)) / state.quiz.questions.length) * 100
+    }%"></div>
       </div>
 
       <div class="w-full py-10 rounded-3xl bg-white shadow-xl flex items-center justify-center mb-6">
@@ -722,14 +907,13 @@ function renderQuiz() {
         ${optionsHtml}
       </div>
 
-      ${
-        selected !== null
-          ? `<button data-action="next-question"
+      ${selected !== null
+      ? `<button data-action="next-question"
               class="w-full py-4 rounded-2xl bg-teal-700 text-white text-lg font-semibold shadow active:scale-95 transition">
-              ${isLast ? "Xem kết quả →" : "Câu tiếp →"}
+              ${isLast ? "Xem Ngu Cỡ Nào →" : "Câu Tiếp, Lẹ →"}
             </button>`
-          : ""
-      }
+      : ""
+    }
     </div>
   `;
 }
@@ -745,29 +929,29 @@ function renderQuizResult() {
 
   const wrongHtml = wrong.length
     ? wrong
-        .map((w) => {
-          const isJp2Romaji = w.direction === "jp2romaji";
-          const questionLabel = isJp2Romaji ? w.card.char : w.card.romaji;
-          const correctLabel = isJp2Romaji ? w.card.romaji : w.card.char;
-          const yourLabel = isJp2Romaji ? w.userAnswer.romaji : w.userAnswer.char;
-          return `
+      .map((w) => {
+        const isJp2Romaji = w.direction === "jp2romaji";
+        const questionLabel = isJp2Romaji ? w.card.char : w.card.romaji;
+        const correctLabel = isJp2Romaji ? w.card.romaji : w.card.char;
+        const yourLabel = isJp2Romaji ? w.userAnswer.romaji : w.userAnswer.char;
+        return `
           <div class="bg-white rounded-xl shadow p-3 flex items-center justify-between gap-3">
             <span class="text-3xl font-semibold text-ink w-14 text-center shrink-0">${questionLabel}</span>
             <div class="flex-1 text-sm text-right">
-              <p class="text-status-busy font-medium">Bạn chọn: ${yourLabel}</p>
-              <p class="text-status-ok font-medium">Đáp án đúng: ${correctLabel}</p>
+              <p class="text-status-busy font-medium">Chọn ngu: ${yourLabel}</p>
+              <p class="text-status-ok font-medium">Đúng phải là: ${correctLabel}</p>
             </div>
           </div>`;
-        })
-        .join("")
-    : `<p class="text-center text-ink-faint text-sm py-4">🎉 Không có câu nào sai, tuyệt vời!</p>`;
+      })
+      .join("")
+    : `<p class="text-center text-ink-faint text-sm py-4">🎉 Không sai phát nào luôn, giỏi đấy</p>`;
 
   return `
-    ${renderBackHeader("Kết quả")}
+    ${renderBackHeader("Kết Quả — Ngu Cỡ Nào Đây")}
     <div class="px-5 pb-8">
       <div class="bg-white rounded-3xl shadow-xl p-6 text-center mb-6">
         <p class="text-5xl font-bold text-teal-700">${score}/${total}</p>
-        <p class="text-ink-soft font-medium mt-1">${percent}% chính xác</p>
+        <p class="text-ink-soft font-medium mt-1">${percent}% đúng, tự lượng sức nha</p>
       </div>
 
       <div class="flex flex-col gap-2 mb-6">
@@ -777,18 +961,17 @@ function renderQuizResult() {
       <div class="flex flex-col gap-3">
         <button data-action="retry-quiz"
           class="w-full py-4 rounded-2xl bg-teal-700 text-white text-lg font-semibold shadow active:scale-95 transition">
-          🔄 Thi lại
+          🔄 Chịu Tội Lại Lần Nữa
         </button>
-        ${
-          wrong.length
-            ? `<button data-action="review-wrong"
+        ${wrong.length
+      ? `<button data-action="review-wrong"
                 class="w-full py-4 rounded-2xl bg-saffron-500 text-ink text-lg font-semibold shadow active:scale-95 transition">
-                📖 Ôn các câu sai
+                📖 Về Liếm Bài Sai Đi
               </button>`
-            : ""
-        }
+      : ""
+    }
         <button data-action="go-home" class="w-full py-3 text-ink-faint font-medium">
-          Về trang chủ
+          Trốn Về Nhà
         </button>
       </div>
     </div>
@@ -814,7 +997,8 @@ document.getElementById("app").addEventListener("click", (e) => {
       render();
       break;
     case "go-study":
-      beginNormalStudy();
+      state.screen = "lessons";
+      render();
       break;
     case "go-quiz":
       beginQuiz();
@@ -822,6 +1006,13 @@ document.getElementById("app").addEventListener("click", (e) => {
     case "go-home":
       state.screen = "home";
       render();
+      break;
+    case "go-lessons":
+      state.screen = "lessons";
+      render();
+      break;
+    case "start-lesson":
+      startLesson(Number(target.dataset.lessonId));
       break;
     case "flip-card":
       state.study.flipped = true;
@@ -832,9 +1023,6 @@ document.getElementById("app").addEventListener("click", (e) => {
       break;
     case "mark-unknown":
       markCard("unknown");
-      break;
-    case "toggle-group":
-      toggleGroup(target.dataset.group);
       break;
     case "select-left":
       selectMatchItem("left", target.dataset.key);
@@ -857,12 +1045,6 @@ document.getElementById("app").addEventListener("click", (e) => {
     case "review-wrong":
       reviewWrongCards();
       break;
-  }
-});
-
-document.getElementById("app").addEventListener("change", (e) => {
-  if (e.target.id === "review-only-checkbox") {
-    toggleReviewOnly();
   }
 });
 

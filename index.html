@@ -1,10 +1,25 @@
 <!doctype html>
 <html lang="vi">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#22635A" />
-  <title>Học Hiragana &amp; Katakana</title>
+  <meta name="theme-color" content="#1C564C" />
+  <title>YAMATE Kana — Vào Học Đi Đồ Lười 🔥</title>
+
+  <meta name="description" content="Học Hiragana &amp; Katakana kiểu mất dạy: flashcard, ghép cặp, thi 20 câu — không nuông chiều, không lên gân, chỉ có 92 chữ cái và một con giọng bựa réo suốt buổi học." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔥</text></svg>" />
+
+  <!-- Open Graph — hiện preview khi chia sẻ link (Zalo, Messenger, Discord...) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="YAMATE Kana — Vào Học Đi Đồ Lười 🔥" />
+  <meta property="og:description" content="Học Hiragana &amp; Katakana kiểu mất dạy: flashcard, ghép cặp, thi 20 câu — không nuông chiều ai hết." />
+  <meta property="og:locale" content="vi_VN" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="YAMATE Kana — Vào Học Đi Đồ Lười 🔥" />
+  <meta name="twitter:description" content="Học Hiragana &amp; Katakana kiểu mất dạy: flashcard, ghép cặp, thi 20 câu — không nuông chiều ai hết." />
 
   <!-- Tailwind CSS (CDN, biên dịch JIT ngay trên trình duyệt) -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -12,7 +27,9 @@
   <!-- Font UI (Plus Jakarta Sans) + font hỗ trợ tiếng Nhật rõ nét (Noto Sans JP) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap"
+    rel="stylesheet" />
 
   <!-- Mở rộng bảng màu Tailwind theo design system tham khảo (teal / saffron / cream / ink) -->
   <script>
@@ -20,8 +37,8 @@
       theme: {
         extend: {
           colors: {
-            teal: { 50:'#F1F7F5', 100:'#E3EFEC', 200:'#BFDAD4', 300:'#86B8AF', 400:'#4E9488', 500:'#2F7A6E', 600:'#22635A', 700:'#1C564C', 800:'#1A4E47', 900:'#143F39' },
-            saffron: { 100:'#FEF7E3', 200:'#FDEFC7', 300:'#FCE4A0', 400:'#FBD97E', 500:'#F6C445', 600:'#EDB428', 700:'#C9971C' },
+            teal: { 50: '#F1F7F5', 100: '#E3EFEC', 200: '#BFDAD4', 300: '#86B8AF', 400: '#4E9488', 500: '#2F7A6E', 600: '#22635A', 700: '#1C564C', 800: '#1A4E47', 900: '#143F39' },
+            saffron: { 100: '#FEF7E3', 200: '#FDEFC7', 300: '#FCE4A0', 400: '#FBD97E', 500: '#F6C445', 600: '#EDB428', 700: '#C9971C' },
             cream: { DEFAULT: '#F4F1E9', surface: '#FBFAF6', border: '#EDE9DD' },
             ink: { DEFAULT: '#232823', soft: '#6F746D', faint: '#9A9E96' },
             status: { ok: '#2E7D32', busy: '#C62828' },
@@ -35,53 +52,128 @@
   </script>
 
   <style>
-    html, body {
+    html,
+    body {
       overscroll-behavior: none;
     }
 
     /* Hiệu ứng rung nhẹ khi ghép/chọn sai */
     @keyframes shake {
-      10%, 90% { transform: translateX(-2px); }
-      20%, 80% { transform: translateX(4px); }
-      30%, 50%, 70% { transform: translateX(-8px); }
-      40%, 60% { transform: translateX(8px); }
+
+      10%,
+      90% {
+        transform: translateX(-2px);
+      }
+
+      20%,
+      80% {
+        transform: translateX(4px);
+      }
+
+      30%,
+      50%,
+      70% {
+        transform: translateX(-8px);
+      }
+
+      40%,
+      60% {
+        transform: translateX(8px);
+      }
     }
+
     .animate-shake {
-      animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+      animation: shake 0.5s cubic-bezier(.36, .07, .19, .97) both;
     }
 
     /* Hiệu ứng lật thẻ flashcard (3D flip) */
     .flip-scene {
       perspective: 1400px;
     }
+
     .flip-card {
       position: relative;
       width: 100%;
       height: 100%;
-      transition: transform 0.5s cubic-bezier(.4,.15,.2,1);
+      transition: transform 0.5s cubic-bezier(.4, .15, .2, 1);
       transform-style: preserve-3d;
     }
+
     .flip-card.is-flipped {
       transform: rotateY(180deg);
     }
+
     .flip-face {
       position: absolute;
       inset: 0;
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }
+
     .flip-face--back {
       transform: rotateY(180deg);
     }
+
+    /* Toast notification — neo giữa mép trên, không che nội dung bên dưới */
+    .toast {
+      position: fixed;
+      top: calc(env(safe-area-inset-top, 0px) + 108px);
+      left: 50%;
+      width: max-content;
+      max-width: min(88vw, 340px);
+      background: #1C564C;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 14px;
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.4;
+      text-align: center;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+      z-index: 999;
+      pointer-events: none;
+      animation: toastIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    @keyframes toastIn {
+      from {
+        transform: translate(-50%, -16px);
+        opacity: 0;
+      }
+
+      to {
+        transform: translate(-50%, 0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes toastOut {
+      from {
+        transform: translate(-50%, 0);
+        opacity: 1;
+      }
+
+      to {
+        transform: translate(-50%, -16px);
+        opacity: 0;
+      }
+    }
+
+    .toast.exiting {
+      animation: toastOut 0.2s ease-in forwards;
+    }
   </style>
 </head>
+
 <body class="bg-cream min-h-screen text-ink font-sans">
-  <!-- Toàn bộ giao diện được render động vào đây bởi app.js -->
-  <div id="app" class="max-w-md mx-auto min-h-screen"></div>
+  <!-- Toàn bộ giao diện được render động vào đây bởi app.js. -->
+  <!-- class (độ rộng khung) được app.js gán động theo từng màn hình, xem containerClass() trong app.js -->
+  <div id="app" class="min-h-screen max-w-md mx-auto"></div>
 
   <!-- Dữ liệu bảng chữ cái -->
   <script src="data.js"></script>
   <!-- Logic ứng dụng -->
   <script src="app.js"></script>
 </body>
+
 </html>
