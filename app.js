@@ -686,7 +686,8 @@ function renderStudyMatching() {
   function itemClasses(key, side) {
     const base =
       "w-full py-4 px-2 rounded-2xl text-2xl font-semibold shadow transition active:scale-95 border-2";
-    if (m.lastCorrect === key) return `${base} bg-status-ok text-white border-status-ok`;
+    if (m.matchedKeys.has(key) || m.lastCorrect === key)
+      return "w-full py-4 px-2 rounded-2xl text-2xl font-semibold border-2 transition bg-status-ok/10 text-status-ok border-status-ok opacity-70";
     if (m.lastWrong && m.lastWrong[side] === key)
       return `${base} bg-status-busy text-white border-status-busy animate-shake`;
     if ((side === "left" && m.selectedLeft === key) || (side === "right" && m.selectedRight === key))
@@ -695,20 +696,18 @@ function renderStudyMatching() {
   }
 
   const leftHtml = m.leftOrder
-    .filter((key) => !m.matchedKeys.has(key))
     .map(
       (key) => `
-      <button data-action="select-left" data-key="${key}" class="${itemClasses(key, "left")}">
+      <button data-action="select-left" data-key="${key}" ${m.matchedKeys.has(key) ? "disabled" : ""} class="${itemClasses(key, "left")}">
         ${cardsByKey[key].char}
       </button>`
     )
     .join("");
 
   const rightHtml = m.rightOrder
-    .filter((key) => !m.matchedKeys.has(key))
     .map(
       (key) => `
-      <button data-action="select-right" data-key="${key}" class="${itemClasses(key, "right")}">
+      <button data-action="select-right" data-key="${key}" ${m.matchedKeys.has(key) ? "disabled" : ""} class="${itemClasses(key, "right")}">
         ${cardsByKey[key].romaji}
       </button>`
     )
