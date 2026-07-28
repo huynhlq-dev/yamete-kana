@@ -327,8 +327,9 @@ function renderHome() {
     ${renderAppHeader()}
     <div class="flex flex-col flex-1 px-5 pt-12 pb-8">
       <div class="text-center mb-10">
-        <div class="text-5xl mb-2">🇯🇵</div>
-        <p class="text-ink-soft mt-1 text-sm">Học đi đồ lười, để lâu não mốc</p>
+        <div class="text-5xl mb-3">🇯🇵</div>
+        <p class="text-ink font-bold italic">"Học nhiều ngu nhiều, học ít ngu ít, không học không ngu"</p>
+        <p class="text-ink-soft mt-2 text-sm">Học đi đồ lười, để lâu não mốc</p>
       </div>
 
       <div class="bg-white rounded-2xl shadow-md p-4 mb-8">
