@@ -249,14 +249,29 @@ function scopeLabel(scope) {
 // Độ rộng khung chứa: màn "lessons" cần rộng hơn để lưới bài học dùng tốt không gian
 // trên desktop/tablet; các màn còn lại giữ cột hẹp căn giữa (tự nhiên vẫn mobile-first).
 function containerClass(screen) {
-  return screen === "lessons" ? "min-h-screen max-w-md sm:max-w-2xl lg:max-w-3xl mx-auto" : "min-h-screen max-w-md mx-auto";
+  const base = "min-h-screen flex flex-col mx-auto";
+  return screen === "lessons" ? `${base} max-w-md sm:max-w-2xl lg:max-w-3xl` : `${base} max-w-md`;
 }
 
-// Thanh header xuyên suốt mọi màn hình — luôn hiện tên app, sticky khi cuộn.
-function renderAppHeader() {
+// Thanh header xuyên suốt mọi màn hình — sticky khi cuộn.
+// Không truyền title: hiện tên app (Home). Có title: hiện nút back (icon trần, không nền) + tiêu đề màn hình.
+// backAction mặc định về Home; các màn học theo bài (flashcard/ghép cặp) truyền "go-lessons"
+// để quay lại đúng màn chọn bài thay vì nhảy hẳn về Home.
+function renderAppHeader(title, backAction = "go-home") {
+  if (!title) {
+    return `
+      <div class="sticky top-0 z-40 bg-teal-700 text-white px-4 py-3 flex items-center justify-center shadow-md shrink-0">
+        <span class="font-bold text-base tracking-wide">🔥 YAMATE KANA</span>
+      </div>
+    `;
+  }
   return `
-    <div class="sticky top-0 z-40 bg-teal-700 text-white px-4 py-2.5 flex items-center justify-center shadow-md">
-      <span class="font-bold text-base tracking-wide">🔥 YAMATE KANA</span>
+    <div class="sticky top-0 z-40 bg-teal-700 text-white px-4 py-3 flex items-center gap-3 shadow-md shrink-0">
+      <button data-action="${backAction}" aria-label="Quay lại"
+        class="w-7 h-7 -ml-1 flex items-center justify-center text-2xl leading-none shrink-0 active:scale-90 transition">
+        ←
+      </button>
+      <h1 class="text-base font-bold tracking-wide truncate">${title}</h1>
     </div>
   `;
 }
@@ -288,29 +303,9 @@ function render() {
       screenHtml = renderQuizResult();
       break;
   }
-  // Reset animation: remove style, update HTML, then let CSS animation play
-  app.style.animation = "none";
-  app.innerHTML = renderAppHeader() + screenHtml;
-  // Trigger animation by forcing reflow
-  void app.offsetWidth;
-  app.style.animation = "";
+  app.innerHTML = screenHtml;
   if (state.screen === "study-flashcard") activateFlashcardFlip();
   window.scrollTo(0, 0);
-}
-
-// Header dùng chung cho các màn không phải Home (nút quay lại).
-// backAction mặc định về Home; các màn học theo bài (flashcard/ghép cặp) truyền "go-lessons"
-// để quay lại đúng màn chọn bài thay vì nhảy hẳn về Home.
-function renderBackHeader(title, backAction = "go-home") {
-  return `
-    <div class="flex items-center gap-3 px-4 pt-4 pb-2">
-      <button data-action="${backAction}" aria-label="Quay lại"
-        class="w-10 h-10 flex items-center justify-center rounded-full bg-white shadow active:scale-90 transition text-teal-700 text-xl shrink-0">
-        ←
-      </button>
-      <h1 class="text-lg font-semibold text-ink truncate">${title}</h1>
-    </div>
-  `;
 }
 
 // ============================================================
@@ -329,7 +324,8 @@ function renderHome() {
   ];
 
   return `
-    <div class="flex flex-col min-h-screen px-5 pt-12 pb-8">
+    ${renderAppHeader()}
+    <div class="flex flex-col flex-1 px-5 pt-12 pb-8">
       <div class="text-center mb-10">
         <div class="text-5xl mb-2">🇯🇵</div>
         <p class="text-ink-soft mt-1 text-sm">Học đi đồ lười, để lâu não mốc</p>
@@ -415,7 +411,7 @@ function renderLessons() {
   const unlocked = isStrokeLessonsUnlocked(scope);
 
   return `
-    ${renderBackHeader("Chọn Bài Học (Hay Trốn Tiếp?)")}
+    ${renderAppHeader("Chọn Bài Học (Hay Trốn Tiếp?)")}
     <div class="px-4 pb-8 pt-6">
       <p class="text-center text-sm text-ink-soft font-medium mb-7">Phạm vi: ${scopeLabel(scope)} — ráng mà nhớ</p>
 
@@ -506,7 +502,7 @@ function renderStudyFlashcard() {
     // Chỉ có thể xảy ra với bài luyện nét (11–14) nếu các nhóm đã hoàn thành chưa
     // đụng tới chữ nào được gắn strokeLevel/lookalike đó — gợi ý học thêm rồi quay lại.
     return `
-      ${renderBackHeader("Lật Thẻ — Đừng Lười", backAction)}
+      ${renderAppHeader("Lật Thẻ — Đừng Lười", backAction)}
       <div class="px-5 text-center mt-16">
         <p class="text-5xl mb-4">🤷</p>
         <p class="text-ink-soft font-medium">Học chưa đủ mà đòi ôn, láo vừa thôi.</p>
@@ -524,7 +520,7 @@ function renderStudyFlashcard() {
       : "";
 
   return `
-    ${renderBackHeader("Lật Thẻ — Đừng Lười", backAction)}
+    ${renderAppHeader("Lật Thẻ — Đừng Lười", backAction)}
     <div class="px-5 pb-8 pt-6">
       ${lessonLabel ? `<p class="text-center text-sm font-medium text-teal-700 mb-4">${lessonLabel}</p>` : ""}
 
@@ -719,7 +715,7 @@ function renderStudyMatching() {
     .join("");
 
   return `
-    ${renderBackHeader("Ghép Cặp — Lẹ Lên Não Cá", state.study.lesson ? "go-lessons" : "go-home")}
+    ${renderAppHeader("Ghép Cặp — Lẹ Lên Não Cá", state.study.lesson ? "go-lessons" : "go-home")}
     <div class="px-4 pb-8 pt-6">
       <p class="text-center text-sm text-ink-faint font-medium mb-6">
         Ghép được ${totalDone}/${state.study.sessionCards.length} rồi đấy · Chọn 1 chữ + 1 âm, đừng bấm bừa
@@ -742,7 +738,8 @@ function renderStudyComplete() {
     : `Liếm lại xong ${s.sessionCards.length} câu sai rồi đó, nhớ chưa?`;
 
   return `
-    <div class="flex flex-col items-center justify-center min-h-screen px-6 text-center">
+    ${renderAppHeader()}
+    <div class="flex flex-col items-center justify-center flex-1 px-6 text-center">
       <div class="text-6xl mb-4">🎉</div>
       <h2 class="text-2xl font-bold text-ink mb-2">Xong Rồi Đấy À? Ngoan Ghê</h2>
       <p class="text-ink-soft mb-8">${summary} Học tiếp đi, đừng có lười!</p>
@@ -892,7 +889,7 @@ function renderQuiz() {
   const isLast = state.quiz.currentIndex + 1 >= state.quiz.questions.length;
 
   return `
-    ${renderBackHeader("Chịu Tội 20 Câu")}
+    ${renderAppHeader("Chịu Tội 20 Câu")}
     <div class="px-5 pb-8 pt-6">
       <div class="flex justify-between items-center text-sm font-medium text-ink-faint mb-6">
         <span>Câu ${state.quiz.currentIndex + 1}/${state.quiz.questions.length}</span>
@@ -952,7 +949,7 @@ function renderQuizResult() {
     : `<p class="text-center text-ink-faint text-sm py-4">🎉 Không sai phát nào luôn, giỏi đấy</p>`;
 
   return `
-    ${renderBackHeader("Kết Quả — Ngu Cỡ Nào Đây")}
+    ${renderAppHeader("Kết Quả — Ngu Cỡ Nào Đây")}
     <div class="px-5 pb-8 pt-6">
       <div class="bg-white rounded-3xl shadow-xl p-6 text-center mb-8">
         <p class="text-5xl font-bold text-teal-700">${score}/${total}</p>
