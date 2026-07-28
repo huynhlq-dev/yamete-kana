@@ -57,6 +57,13 @@
       overscroll-behavior: none;
     }
 
+    /* min-height thật của viewport mobile (trừ thanh địa chỉ), thay cho 100vh của Tailwind
+       — 100vh tính theo lúc thanh địa chỉ ẩn hẳn nên luôn thừa ra vài chục px lúc mới load. */
+    #app {
+      min-height: 100vh;
+      min-height: 100dvh;
+    }
+
     /* Hiệu ứng rung nhẹ khi ghép/chọn sai */
     @keyframes shake {
 
@@ -165,7 +172,7 @@
   </style>
 </head>
 
-<body class="bg-cream min-h-screen text-ink font-sans">
+<body class="bg-cream text-ink font-sans">
   <!-- Toàn bộ giao diện được render động vào đây bởi app.js. -->
   <!-- class (độ rộng khung) được app.js gán động theo từng màn hình, xem containerClass() trong app.js -->
   <div id="app" class="min-h-screen max-w-md mx-auto"></div>
