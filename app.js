@@ -301,6 +301,13 @@ function renderAppHeader(title, backAction = "go-home") {
   `;
 }
 
+// Chân trang bản quyền — xuất hiện dưới cùng mọi màn hình.
+function renderFooter() {
+  return `
+    <p class="text-center text-[11px] text-ink-faint py-3 shrink-0">© 2026 YAMATE Kana · huynhlq.dev@gmail.com</p>
+  `;
+}
+
 function render() {
   const app = document.getElementById("app");
   app.className = containerClass(state.screen);
@@ -328,7 +335,7 @@ function render() {
       screenHtml = renderQuizResult();
       break;
   }
-  app.innerHTML = screenHtml;
+  app.innerHTML = screenHtml + renderFooter();
   if (state.screen === "study-flashcard") activateFlashcardFlip();
   window.scrollTo(0, 0);
 }
@@ -438,7 +445,7 @@ function renderLessons() {
 
   return `
     ${renderAppHeader("Chọn Bài Học (Hay Trốn Tiếp?)")}
-    <div class="px-4 pb-8 pt-6">
+    <div class="px-4 pb-8 pt-6 flex-1">
       <p class="text-center text-sm text-ink-soft font-medium mb-7">Phạm vi: ${scopeLabel(scope)} — ráng mà nhớ</p>
 
       <h2 class="text-xs font-semibold text-ink-faint uppercase tracking-wide mb-4">Học Theo Hàng (Dễ Ẹc)</h2>
@@ -537,7 +544,7 @@ function renderStudyFlashcard() {
     // đụng tới chữ nào được gắn strokeLevel/lookalike đó — gợi ý học thêm rồi quay lại.
     return `
       ${renderAppHeader("Lật Thẻ — Đừng Lười", backAction)}
-      <div class="px-5 text-center mt-16">
+      <div class="px-5 text-center mt-16 flex-1">
         <p class="text-5xl mb-4">🤷</p>
         <p class="text-ink-soft font-medium">Học chưa đủ mà đòi ôn, láo vừa thôi.</p>
         <p class="text-ink-faint text-sm mt-1">Về học thêm vài bài "Học Theo Hàng" đi rồi hẵng quay lại.</p>
@@ -555,7 +562,7 @@ function renderStudyFlashcard() {
 
   return `
     ${renderAppHeader("Lật Thẻ — Đừng Lười", backAction)}
-    <div class="px-5 pb-8 pt-6">
+    <div class="px-5 pb-8 pt-6 flex-1">
       ${lessonLabel ? `<p class="text-center text-sm font-medium text-teal-700 mb-4">${lessonLabel}</p>` : ""}
 
       <p class="text-center text-sm text-ink-faint font-medium mb-6">${progressText}</p>
@@ -753,7 +760,7 @@ function renderStudyMatching() {
 
   return `
     ${renderAppHeader("Ghép Cặp — Lẹ Lên Não Cá", state.study.lesson ? "go-lessons" : "go-home")}
-    <div class="px-4 pb-8 pt-6">
+    <div class="px-4 pb-8 pt-6 flex-1">
       <p class="text-center text-sm text-ink-faint font-medium mb-6">
         Ghép được ${totalDone}/${state.study.sessionCards.length} rồi đấy · Chọn 1 chữ + 1 âm, đừng bấm bừa
       </p>
@@ -927,7 +934,7 @@ function renderQuiz() {
 
   return `
     ${renderAppHeader("Chịu Tội 20 Câu")}
-    <div class="px-5 pb-8 pt-6">
+    <div class="px-5 pb-8 pt-6 flex-1">
       <div class="flex justify-between items-center text-sm font-medium text-ink-faint mb-6">
         <span>Câu ${state.quiz.currentIndex + 1}/${state.quiz.questions.length}</span>
         <span>Điểm: ${state.quiz.score}</span>
@@ -987,7 +994,7 @@ function renderQuizResult() {
 
   return `
     ${renderAppHeader("Kết Quả — Ngu Cỡ Nào Đây")}
-    <div class="px-5 pb-8 pt-6">
+    <div class="px-5 pb-8 pt-6 flex-1">
       <div class="bg-white rounded-3xl shadow-xl p-6 text-center mb-8">
         <p class="text-5xl font-bold text-teal-700">${score}/${total}</p>
         <p class="text-ink-soft font-medium mt-1">${percent}% đúng, tự lượng sức nha</p>
