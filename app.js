@@ -519,6 +519,14 @@ function nextFlashcard() {
   render();
 }
 
+// Bỏ qua phần còn lại của flashcard, nhảy thẳng sang ghép cặp với toàn bộ danh sách của phiên học
+function skipToMatching() {
+  const s = state.study;
+  s.current = null;
+  s.queue = [];
+  startMatchingStage(s.sessionCards);
+}
+
 function renderStudyFlashcard() {
   const s = state.study;
   const card = s.current;
@@ -577,6 +585,10 @@ function renderStudyFlashcard() {
                </button>
              </div>`
     }
+
+      <button data-action="skip-to-matching" class="w-full py-3 mt-4 text-ink-faint text-sm font-medium underline underline-offset-2 active:opacity-60 transition">
+        ⏭️ Lười vậy? Bỏ qua, vào ghép cặp luôn
+      </button>
     </div>
   `;
 }
@@ -1050,6 +1062,9 @@ document.getElementById("app").addEventListener("click", (e) => {
       break;
     case "mark-unknown":
       markCard("unknown");
+      break;
+    case "skip-to-matching":
+      skipToMatching();
       break;
     case "select-left":
       selectMatchItem("left", target.dataset.key);
