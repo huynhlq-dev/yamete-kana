@@ -51,26 +51,51 @@ const DIALOG_MESSAGES = {
   correct: [
     "✅ Đúng rồi, giỏi quá… muốn thưởng gì?",
     "😘 Ngon đấy, được cái headpat",
+    "🥰 Chuẩn không cần chỉnh, giỏi vậy",
+    "👌 Đúng đấy, hiếm khi thấy mày tỉnh táo vậy",
+    "😎 Ghi điểm rồi đó, đừng ảo tưởng",
   ],
   wrong: [
     "❌ Sai rồi đồ đần",
     "🤦 Yamete… não để ở nhà à?",
+    "😑 Sai bét, về học lại đi",
+    "🙄 Trớt quớt luôn, cố lên đầu đất",
+    "😩 Sai rồi, chán mày ghê",
   ],
   lessonComplete: [
     "🎉 Xong bài rồi à? Ngoan đấy",
     "😤 Cleared. Được phép thở",
+    "🥳 Hoàn thành rồi đó, tự vỗ tay đi",
+    "😮‍💨 Xong! Mệt chưa, còn lâu mới được nghỉ",
+    "👏 Ngoan, làm tiếp bài khác đi",
   ],
   allRowsComplete: [
     "🔥 Học xong 46 chữ rồi. Giờ muốn yamete cũng muộn",
+    "🏁 46 chữ xong sạch, giờ mới là bắt đầu thảm họa",
+    "🎊 Full combo 46 chữ, tự hào lên chút đi",
+    "😈 Xong hết rồi, hết đường trốn luôn",
+    "🚀 46/46, lên cấp thành não cá vàng hạng sang",
   ],
   quizStart: [
     "⚔️ Vào chịu tội 20 câu",
+    "🔫 20 câu đang chờ, chuẩn bị tinh thần đi",
+    "😏 Show hàng đi, 20 câu đấy",
+    "🎯 Bắt đầu thi, đừng có mà run",
+    "🃏 20 câu định mệnh, rén không?",
   ],
   quizHighScore: [
     "👑 Thánh rồi, yamete kudasai",
+    "🌟 Điểm cao dữ, học khi nào vậy",
+    "🏆 Nể đấy, hiếm khi thấy mày giỏi vậy",
+    "💎 Xịn sò, cho xin tí ngưỡng mộ",
+    "🔥 Đỉnh của chóp, giỏi thế này ai chịu nổi",
   ],
   quizLowScore: [
     "💀 Thảm họa. Về liếm bài từ đầu",
+    "😭 Điểm này nhìn thôi cũng thấy đau",
+    "🫠 Thua đau, về ôn lại đi đồ lười",
+    "🤡 Thảm quá, chắc lúc thi não đi chơi",
+    "😵 Tan nát rồi, học lại từ đầu đi",
   ],
 };
 
