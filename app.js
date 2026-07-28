@@ -49,28 +49,28 @@ function cardKey(card) {
 // ============================================================
 const DIALOG_MESSAGES = {
   correct: [
-    "Đúng rồi, giỏi quá… muốn thưởng gì?",
-    "Ngon đấy, được cái headpat",
+    "✅ Đúng rồi, giỏi quá… muốn thưởng gì?",
+    "😘 Ngon đấy, được cái headpat",
   ],
   wrong: [
-    "Sai rồi đồ đần",
-    "Yamete… não để ở nhà à?",
+    "❌ Sai rồi đồ đần",
+    "🤦 Yamete… não để ở nhà à?",
   ],
   lessonComplete: [
-    "Xong bài rồi à? Ngoan đấy",
-    "Cleared. Được phép thở",
+    "🎉 Xong bài rồi à? Ngoan đấy",
+    "😤 Cleared. Được phép thở",
   ],
   allRowsComplete: [
-    "Học xong 46 chữ rồi. Giờ muốn yamete cũng muộn",
+    "🔥 Học xong 46 chữ rồi. Giờ muốn yamete cũng muộn",
   ],
   quizStart: [
-    "Vào chịu tội 20 câu",
+    "⚔️ Vào chịu tội 20 câu",
   ],
   quizHighScore: [
-    "Thánh rồi, yamete kudasai",
+    "👑 Thánh rồi, yamete kudasai",
   ],
   quizLowScore: [
-    "Thảm họa. Về liếm bài từ đầu",
+    "💀 Thảm họa. Về liếm bài từ đầu",
   ],
 };
 
@@ -288,7 +288,12 @@ function render() {
       screenHtml = renderQuizResult();
       break;
   }
+  // Reset animation: remove style, update HTML, then let CSS animation play
+  app.style.animation = "none";
   app.innerHTML = renderAppHeader() + screenHtml;
+  // Trigger animation by forcing reflow
+  void app.offsetWidth;
+  app.style.animation = "";
   if (state.screen === "study-flashcard") activateFlashcardFlip();
   window.scrollTo(0, 0);
 }
@@ -324,15 +329,15 @@ function renderHome() {
   ];
 
   return `
-    <div class="flex flex-col min-h-screen px-5 pt-8 pb-8">
-      <div class="text-center mb-8">
+    <div class="flex flex-col min-h-screen px-5 pt-12 pb-8">
+      <div class="text-center mb-10">
         <div class="text-5xl mb-2">🇯🇵</div>
         <p class="text-ink-soft mt-1 text-sm">Học đi đồ lười, để lâu não mốc</p>
       </div>
 
-      <div class="bg-white rounded-2xl shadow-md p-4 mb-6">
-        <p class="text-sm font-medium text-ink-soft mb-2">Chọn bảng chữ, lẹ lên!</p>
-        <div class="grid grid-cols-3 gap-2">
+      <div class="bg-white rounded-2xl shadow-md p-4 mb-8">
+        <p class="text-sm font-medium text-ink-soft mb-3">Chọn bảng chữ, lẹ lên!</p>
+        <div class="grid grid-cols-3 gap-3">
           ${scopes
       .map(
         (s) => `
@@ -348,7 +353,7 @@ function renderHome() {
         </div>
       </div>
 
-      <div class="flex flex-col gap-4 mt-2">
+      <div class="flex flex-col gap-5 mt-4">
         <button data-action="go-study"
           class="w-full py-5 rounded-2xl bg-teal-700 text-white text-xl font-semibold shadow-lg active:scale-95 transition">
           📖 Vào học đi đồ lười
@@ -411,20 +416,20 @@ function renderLessons() {
 
   return `
     ${renderBackHeader("Chọn Bài Học (Hay Trốn Tiếp?)")}
-    <div class="px-4 pb-8">
-      <p class="text-center text-sm text-ink-soft font-medium mb-5">Phạm vi: ${scopeLabel(scope)} — ráng mà nhớ</p>
+    <div class="px-4 pb-8 pt-6">
+      <p class="text-center text-sm text-ink-soft font-medium mb-7">Phạm vi: ${scopeLabel(scope)} — ráng mà nhớ</p>
 
-      <h2 class="text-xs font-semibold text-ink-faint uppercase tracking-wide mb-3">Học Theo Hàng (Dễ Ẹc)</h2>
-      <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-8">
+      <h2 class="text-xs font-semibold text-ink-faint uppercase tracking-wide mb-4">Học Theo Hàng (Dễ Ẹc)</h2>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-10">
         ${rowLessons.map((l) => renderLessonCard(l, scope, true)).join("")}
       </div>
 
-      <h2 class="text-xs font-semibold text-ink-faint uppercase tracking-wide mb-1">Luyện Nét &amp; Hình (Khó Đấy)</h2>
+      <h2 class="text-xs font-semibold text-ink-faint uppercase tracking-wide mb-2">Luyện Nét &amp; Hình (Khó Đấy)</h2>
       ${unlocked
       ? ""
-      : `<p class="text-xs text-ink-faint mb-3">🔒 Học xong ${completedRows}/${STROKE_LESSONS_UNLOCK_COUNT} bài đã, đòi gì mở khóa</p>`
+      : `<p class="text-xs text-ink-faint mb-4">🔒 Học xong ${completedRows}/${STROKE_LESSONS_UNLOCK_COUNT} bài đã, đòi gì mở khóa</p>`
     }
-      <div class="grid grid-cols-2 md:grid-cols-3 gap-3 ${unlocked ? "mt-3" : ""}">
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-4 ${unlocked ? "mt-4" : ""}">
         ${strokeLessons.map((l) => renderLessonCard(l, scope, unlocked)).join("")}
       </div>
     </div>
@@ -520,12 +525,12 @@ function renderStudyFlashcard() {
 
   return `
     ${renderBackHeader("Lật Thẻ — Đừng Lười", backAction)}
-    <div class="px-5 pb-8">
-      ${lessonLabel ? `<p class="text-center text-sm font-medium text-teal-700 mb-3">${lessonLabel}</p>` : ""}
+    <div class="px-5 pb-8 pt-6">
+      ${lessonLabel ? `<p class="text-center text-sm font-medium text-teal-700 mb-4">${lessonLabel}</p>` : ""}
 
-      <p class="text-center text-sm text-ink-faint font-medium mb-3">${progressText}</p>
+      <p class="text-center text-sm text-ink-faint font-medium mb-6">${progressText}</p>
 
-      <div class="flip-scene w-full aspect-square max-h-[45vh] mb-6 active:scale-[0.98] transition">
+      <div class="flip-scene w-full aspect-square max-h-[45vh] mb-8 active:scale-[0.98] transition">
         <div id="flip-card-inner" data-action="flip-card" class="flip-card cursor-pointer">
           <div class="flip-face rounded-3xl bg-white shadow-xl flex items-center justify-center">
             <span class="text-8xl font-medium text-ink">${card.char}</span>
@@ -715,13 +720,13 @@ function renderStudyMatching() {
 
   return `
     ${renderBackHeader("Ghép Cặp — Lẹ Lên Não Cá", state.study.lesson ? "go-lessons" : "go-home")}
-    <div class="px-4 pb-8">
-      <p class="text-center text-sm text-ink-faint font-medium mb-4">
+    <div class="px-4 pb-8 pt-6">
+      <p class="text-center text-sm text-ink-faint font-medium mb-6">
         Ghép được ${totalDone}/${state.study.sessionCards.length} rồi đấy · Chọn 1 chữ + 1 âm, đừng bấm bừa
       </p>
-      <div class="grid grid-cols-2 gap-3">
-        <div class="flex flex-col gap-3">${leftHtml}</div>
-        <div class="flex flex-col gap-3">${rightHtml}</div>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="flex flex-col gap-4">${leftHtml}</div>
+        <div class="flex flex-col gap-4">${rightHtml}</div>
       </div>
     </div>
   `;
@@ -741,7 +746,7 @@ function renderStudyComplete() {
       <div class="text-6xl mb-4">🎉</div>
       <h2 class="text-2xl font-bold text-ink mb-2">Xong Rồi Đấy À? Ngoan Ghê</h2>
       <p class="text-ink-soft mb-8">${summary} Học tiếp đi, đừng có lười!</p>
-      <div class="w-full flex flex-col gap-3 max-w-xs">
+      <div class="w-full flex flex-col gap-4 max-w-xs">
         <button data-action="continue-study"
           class="w-full py-4 rounded-2xl bg-teal-700 text-white text-lg font-semibold shadow active:scale-95 transition">
           📖 Học Tiếp Đi Đồ Lười
@@ -888,8 +893,8 @@ function renderQuiz() {
 
   return `
     ${renderBackHeader("Chịu Tội 20 Câu")}
-    <div class="px-5 pb-8">
-      <div class="flex justify-between items-center text-sm font-medium text-ink-faint mb-4">
+    <div class="px-5 pb-8 pt-6">
+      <div class="flex justify-between items-center text-sm font-medium text-ink-faint mb-6">
         <span>Câu ${state.quiz.currentIndex + 1}/${state.quiz.questions.length}</span>
         <span>Điểm: ${state.quiz.score}</span>
       </div>
@@ -903,7 +908,7 @@ function renderQuiz() {
         ${promptHtml}
       </div>
 
-      <div class="grid grid-cols-2 gap-3 mb-4">
+      <div class="grid grid-cols-2 gap-4 mb-5">
         ${optionsHtml}
       </div>
 
@@ -948,17 +953,17 @@ function renderQuizResult() {
 
   return `
     ${renderBackHeader("Kết Quả — Ngu Cỡ Nào Đây")}
-    <div class="px-5 pb-8">
-      <div class="bg-white rounded-3xl shadow-xl p-6 text-center mb-6">
+    <div class="px-5 pb-8 pt-6">
+      <div class="bg-white rounded-3xl shadow-xl p-6 text-center mb-8">
         <p class="text-5xl font-bold text-teal-700">${score}/${total}</p>
         <p class="text-ink-soft font-medium mt-1">${percent}% đúng, tự lượng sức nha</p>
       </div>
 
-      <div class="flex flex-col gap-2 mb-6">
+      <div class="flex flex-col gap-3 mb-8">
         ${wrongHtml}
       </div>
 
-      <div class="flex flex-col gap-3">
+      <div class="flex flex-col gap-4">
         <button data-action="retry-quiz"
           class="w-full py-4 rounded-2xl bg-teal-700 text-white text-lg font-semibold shadow active:scale-95 transition">
           🔄 Chịu Tội Lại Lần Nữa
