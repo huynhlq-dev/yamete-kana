@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#22635A" />
+  <title>Học Hiragana &amp; Katakana</title>
+
+  <!-- Tailwind CSS (CDN, biên dịch JIT ngay trên trình duyệt) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font UI (Plus Jakarta Sans) + font hỗ trợ tiếng Nhật rõ nét (Noto Sans JP) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet" />
+
+  <!-- Mở rộng bảng màu Tailwind theo design system tham khảo (teal / saffron / cream / ink) -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            teal: { 50:'#F1F7F5', 100:'#E3EFEC', 200:'#BFDAD4', 300:'#86B8AF', 400:'#4E9488', 500:'#2F7A6E', 600:'#22635A', 700:'#1C564C', 800:'#1A4E47', 900:'#143F39' },
+            saffron: { 100:'#FEF7E3', 200:'#FDEFC7', 300:'#FCE4A0', 400:'#FBD97E', 500:'#F6C445', 600:'#EDB428', 700:'#C9971C' },
+            cream: { DEFAULT: '#F4F1E9', surface: '#FBFAF6', border: '#EDE9DD' },
+            ink: { DEFAULT: '#232823', soft: '#6F746D', faint: '#9A9E96' },
+            status: { ok: '#2E7D32', busy: '#C62828' },
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', '"Noto Sans JP"', 'system-ui', '-apple-system', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    html, body {
+      overscroll-behavior: none;
+    }
+
+    /* Hiệu ứng rung nhẹ khi ghép/chọn sai */
+    @keyframes shake {
+      10%, 90% { transform: translateX(-2px); }
+      20%, 80% { transform: translateX(4px); }
+      30%, 50%, 70% { transform: translateX(-8px); }
+      40%, 60% { transform: translateX(8px); }
+    }
+    .animate-shake {
+      animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+    }
+
+    /* Hiệu ứng lật thẻ flashcard (3D flip) */
+    .flip-scene {
+      perspective: 1400px;
+    }
+    .flip-card {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.5s cubic-bezier(.4,.15,.2,1);
+      transform-style: preserve-3d;
+    }
+    .flip-card.is-flipped {
+      transform: rotateY(180deg);
+    }
+    .flip-face {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    .flip-face--back {
+      transform: rotateY(180deg);
+    }
+  </style>
+</head>
+<body class="bg-cream min-h-screen text-ink font-sans">
+  <!-- Toàn bộ giao diện được render động vào đây bởi app.js -->
+  <div id="app" class="max-w-md mx-auto min-h-screen"></div>
+
+  <!-- Dữ liệu bảng chữ cái -->
+  <script src="data.js"></script>
+  <!-- Logic ứng dụng -->
+  <script src="app.js"></script>
+</body>
+</html>
