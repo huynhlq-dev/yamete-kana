@@ -227,6 +227,8 @@ const state = {
     queue: [], // các thẻ flashcard còn lại phải học
     current: null, // thẻ đang hiển thị
     flipped: false, // thẻ đã lật chưa
+    inputFeedback: null, // null | "correct" | "wrong" | "empty" — kết quả so khớp ô nhập âm lúc lật thẻ
+    typedAnswer: "", // giữ lại chữ đã gõ lúc lật, để hiện lại (disabled) cùng màu viền sau khi lật
 
     matching: {
       queueRemaining: [], // các thẻ còn chờ ở vòng ghép cặp sau
@@ -505,6 +507,8 @@ function startLesson(lessonId) {
   state.study.current = shuffled.shift() || null;
   state.study.queue = shuffled;
   state.study.flipped = false;
+  state.study.inputFeedback = null;
+  state.study.typedAnswer = "";
 
   setLessonStatus(state.scope, lesson.key, "in_progress");
   state.screen = "study-flashcard";
@@ -521,6 +525,8 @@ function beginCustomStudy(cards) {
   state.study.current = shuffled.shift() || null;
   state.study.queue = shuffled;
   state.study.flipped = false;
+  state.study.inputFeedback = null;
+  state.study.typedAnswer = "";
   state.screen = "study-flashcard";
   render();
 }
@@ -545,6 +551,8 @@ function nextFlashcard() {
   }
   s.current = s.queue.shift();
   s.flipped = false;
+  s.inputFeedback = null;
+  s.typedAnswer = "";
   render();
 }
 
@@ -554,6 +562,41 @@ function skipToMatching() {
   s.current = null;
   s.queue = [];
   startMatchingStage(s.sessionCards);
+}
+
+// Lật thẻ: chấm ô nhập âm (nếu có) so với romaji đúng, không phân biệt hoa/thường, bỏ khoảng trắng thừa
+function flipCard() {
+  const s = state.study;
+  if (s.flipped || !s.current) return;
+
+  const input = document.getElementById("flashcard-romaji-input");
+  const typed = (input?.value ?? "").trim();
+  s.typedAnswer = typed;
+
+  if (typed === "") {
+    s.inputFeedback = "empty";
+  } else if (typed.toLowerCase() === s.current.romaji.toLowerCase()) {
+    s.inputFeedback = "correct";
+  } else {
+    s.inputFeedback = "wrong";
+  }
+
+  s.flipped = true;
+  render();
+}
+
+// Thoát ký tự đặc biệt trước khi chèn text do người dùng gõ vào thuộc tính HTML (value="...")
+function escapeHtml(str) {
+  return str.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+// Border/nền ô nhập âm theo kết quả chấm: xanh (đúng), đỏ (sai), vàng (bỏ trống), trung tính (chưa lật)
+function inputFeedbackClasses(feedback) {
+  const base = "w-full py-3 px-4 rounded-2xl text-center text-lg font-medium border-2 transition outline-none";
+  if (feedback === "correct") return `${base} bg-status-ok/10 text-status-ok border-status-ok`;
+  if (feedback === "wrong") return `${base} bg-status-busy/10 text-status-busy border-status-busy`;
+  if (feedback === "empty") return `${base} bg-saffron-100 text-saffron-700 border-saffron-500`;
+  return `${base} bg-white text-ink border-transparent focus:border-teal-700`;
 }
 
 function renderStudyFlashcard() {
@@ -589,7 +632,7 @@ function renderStudyFlashcard() {
 
       <p class="text-center text-sm text-ink-faint font-medium mb-6">${progressText}</p>
 
-      <div class="flip-scene w-full aspect-square max-h-[45vh] mb-8 active:scale-[0.98] transition">
+      <div class="flip-scene w-full aspect-square max-h-[45vh] mb-4 active:scale-[0.98] transition">
         <div id="flip-card-inner" data-action="flip-card" class="flip-card cursor-pointer">
           <div class="flip-face rounded-3xl bg-white shadow-xl flex items-center justify-center">
             <span class="text-8xl font-medium text-ink">${card.char}</span>
@@ -601,10 +644,16 @@ function renderStudyFlashcard() {
         </div>
       </div>
 
+      <div class="relative mb-3">
+        <input id="flashcard-romaji-input" type="text" placeholder="Nhập âm vào đây…" ${s.flipped ? "disabled" : ""}
+          ${s.flipped ? `value="${escapeHtml(s.typedAnswer)}"` : ""}
+          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+          class="${inputFeedbackClasses(s.inputFeedback)}" />
+        ${s.inputFeedback === "correct" ? `<span class="absolute right-4 top-1/2 -translate-y-1/2 text-status-ok text-xl">✓</span>` : ""}
+      </div>
+
       ${!s.flipped
-      ? `<button data-action="flip-card" class="w-full py-4 rounded-2xl bg-teal-700 text-white text-lg font-semibold shadow active:scale-95 transition mb-3">
-               Lật Đi, Sợ Gì
-             </button>`
+      ? `<p class="text-center text-sm text-ink-faint font-medium mb-3">👆 Chạm vào thẻ để lật</p>`
       : `<div class="grid grid-cols-2 gap-3">
                <button data-action="mark-unknown" class="py-4 rounded-2xl bg-status-busy text-white text-lg font-semibold shadow active:scale-95 transition">
                  ❌ Chưa nhớ + đầu đất
@@ -1083,8 +1132,7 @@ document.getElementById("app").addEventListener("click", (e) => {
       startLesson(Number(target.dataset.lessonId));
       break;
     case "flip-card":
-      state.study.flipped = true;
-      render();
+      flipCard();
       break;
     case "mark-known":
       markCard("known");
