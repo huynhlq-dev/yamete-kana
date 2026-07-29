@@ -13,6 +13,12 @@
  * strokeLevel/lookalike được chọn thủ công dựa trên số nét thật của từng chữ (không phải suy ra
  * tự động), rải đều trên nhiều hàng phụ âm khác nhau để bài luyện nét vẫn có đủ chữ để học dù
  * người dùng mới hoàn thành một phần các bài 1–10.
+ *
+ * HIRAGANA_YOON / KATAKANA_YOON: âm ghép (Yōon) — chữ i-row nhỏ lại + や/ゆ/よ viết nhỏ (きゃ, しゃ...).
+ * Tách riêng khỏi HIRAGANA/KATAKANA (không tính vào 46 chữ cơ bản, không lọt vào bài thi 20 câu),
+ * chỉ dùng cho 6 bài học riêng (15–20). Mỗi phần tử: { char, romaji, type, group, isYoon: true }
+ *   - group: yoon_k, yoon_s, yoon_t, yoon_n, yoon_m, yoon_b — mỗi bài học 1 group, có thể gộp
+ *            nhiều hàng phụ âm gốc (vd yoon_n gồm cả N/H/P) giống cách bài 10 gộp W+N.
  */
 
 const HIRAGANA = [
@@ -131,6 +137,88 @@ const KATAKANA = [
   { char: "ン", romaji: "n", type: "katakana", group: "w", strokeLevel: "mid", lookalike: true },
 ];
 
+const HIRAGANA_YOON = [
+  { char: "きゃ", romaji: "kya", type: "hiragana", group: "yoon_k", isYoon: true },
+  { char: "きゅ", romaji: "kyu", type: "hiragana", group: "yoon_k", isYoon: true },
+  { char: "きょ", romaji: "kyo", type: "hiragana", group: "yoon_k", isYoon: true },
+  { char: "ぎゃ", romaji: "gya", type: "hiragana", group: "yoon_k", isYoon: true },
+  { char: "ぎゅ", romaji: "gyu", type: "hiragana", group: "yoon_k", isYoon: true },
+  { char: "ぎょ", romaji: "gyo", type: "hiragana", group: "yoon_k", isYoon: true },
+
+  { char: "しゃ", romaji: "sha", type: "hiragana", group: "yoon_s", isYoon: true },
+  { char: "しゅ", romaji: "shu", type: "hiragana", group: "yoon_s", isYoon: true },
+  { char: "しょ", romaji: "sho", type: "hiragana", group: "yoon_s", isYoon: true },
+  { char: "じゃ", romaji: "ja", type: "hiragana", group: "yoon_s", isYoon: true },
+  { char: "じゅ", romaji: "ju", type: "hiragana", group: "yoon_s", isYoon: true },
+  { char: "じょ", romaji: "jo", type: "hiragana", group: "yoon_s", isYoon: true },
+
+  { char: "ちゃ", romaji: "cha", type: "hiragana", group: "yoon_t", isYoon: true },
+  { char: "ちゅ", romaji: "chu", type: "hiragana", group: "yoon_t", isYoon: true },
+  { char: "ちょ", romaji: "cho", type: "hiragana", group: "yoon_t", isYoon: true },
+
+  { char: "にゃ", romaji: "nya", type: "hiragana", group: "yoon_n", isYoon: true },
+  { char: "にゅ", romaji: "nyu", type: "hiragana", group: "yoon_n", isYoon: true },
+  { char: "にょ", romaji: "nyo", type: "hiragana", group: "yoon_n", isYoon: true },
+  { char: "ひゃ", romaji: "hya", type: "hiragana", group: "yoon_n", isYoon: true },
+  { char: "ひゅ", romaji: "hyu", type: "hiragana", group: "yoon_n", isYoon: true },
+  { char: "ひょ", romaji: "hyo", type: "hiragana", group: "yoon_n", isYoon: true },
+  { char: "ぴゃ", romaji: "pya", type: "hiragana", group: "yoon_n", isYoon: true },
+  { char: "ぴゅ", romaji: "pyu", type: "hiragana", group: "yoon_n", isYoon: true },
+  { char: "ぴょ", romaji: "pyo", type: "hiragana", group: "yoon_n", isYoon: true },
+
+  { char: "みゃ", romaji: "mya", type: "hiragana", group: "yoon_m", isYoon: true },
+  { char: "みゅ", romaji: "myu", type: "hiragana", group: "yoon_m", isYoon: true },
+  { char: "みょ", romaji: "myo", type: "hiragana", group: "yoon_m", isYoon: true },
+  { char: "りゃ", romaji: "rya", type: "hiragana", group: "yoon_m", isYoon: true },
+  { char: "りゅ", romaji: "ryu", type: "hiragana", group: "yoon_m", isYoon: true },
+  { char: "りょ", romaji: "ryo", type: "hiragana", group: "yoon_m", isYoon: true },
+
+  { char: "びゃ", romaji: "bya", type: "hiragana", group: "yoon_b", isYoon: true },
+  { char: "びゅ", romaji: "byu", type: "hiragana", group: "yoon_b", isYoon: true },
+  { char: "びょ", romaji: "byo", type: "hiragana", group: "yoon_b", isYoon: true },
+];
+
+const KATAKANA_YOON = [
+  { char: "キャ", romaji: "kya", type: "katakana", group: "yoon_k", isYoon: true },
+  { char: "キュ", romaji: "kyu", type: "katakana", group: "yoon_k", isYoon: true },
+  { char: "キョ", romaji: "kyo", type: "katakana", group: "yoon_k", isYoon: true },
+  { char: "ギャ", romaji: "gya", type: "katakana", group: "yoon_k", isYoon: true },
+  { char: "ギュ", romaji: "gyu", type: "katakana", group: "yoon_k", isYoon: true },
+  { char: "ギョ", romaji: "gyo", type: "katakana", group: "yoon_k", isYoon: true },
+
+  { char: "シャ", romaji: "sha", type: "katakana", group: "yoon_s", isYoon: true },
+  { char: "シュ", romaji: "shu", type: "katakana", group: "yoon_s", isYoon: true },
+  { char: "ショ", romaji: "sho", type: "katakana", group: "yoon_s", isYoon: true },
+  { char: "ジャ", romaji: "ja", type: "katakana", group: "yoon_s", isYoon: true },
+  { char: "ジュ", romaji: "ju", type: "katakana", group: "yoon_s", isYoon: true },
+  { char: "ジョ", romaji: "jo", type: "katakana", group: "yoon_s", isYoon: true },
+
+  { char: "チャ", romaji: "cha", type: "katakana", group: "yoon_t", isYoon: true },
+  { char: "チュ", romaji: "chu", type: "katakana", group: "yoon_t", isYoon: true },
+  { char: "チョ", romaji: "cho", type: "katakana", group: "yoon_t", isYoon: true },
+
+  { char: "ニャ", romaji: "nya", type: "katakana", group: "yoon_n", isYoon: true },
+  { char: "ニュ", romaji: "nyu", type: "katakana", group: "yoon_n", isYoon: true },
+  { char: "ニョ", romaji: "nyo", type: "katakana", group: "yoon_n", isYoon: true },
+  { char: "ヒャ", romaji: "hya", type: "katakana", group: "yoon_n", isYoon: true },
+  { char: "ヒュ", romaji: "hyu", type: "katakana", group: "yoon_n", isYoon: true },
+  { char: "ヒョ", romaji: "hyo", type: "katakana", group: "yoon_n", isYoon: true },
+  { char: "ピャ", romaji: "pya", type: "katakana", group: "yoon_n", isYoon: true },
+  { char: "ピュ", romaji: "pyu", type: "katakana", group: "yoon_n", isYoon: true },
+  { char: "ピョ", romaji: "pyo", type: "katakana", group: "yoon_n", isYoon: true },
+
+  { char: "ミャ", romaji: "mya", type: "katakana", group: "yoon_m", isYoon: true },
+  { char: "ミュ", romaji: "myu", type: "katakana", group: "yoon_m", isYoon: true },
+  { char: "ミョ", romaji: "myo", type: "katakana", group: "yoon_m", isYoon: true },
+  { char: "リャ", romaji: "rya", type: "katakana", group: "yoon_m", isYoon: true },
+  { char: "リュ", romaji: "ryu", type: "katakana", group: "yoon_m", isYoon: true },
+  { char: "リョ", romaji: "ryo", type: "katakana", group: "yoon_m", isYoon: true },
+
+  { char: "ビャ", romaji: "bya", type: "katakana", group: "yoon_b", isYoon: true },
+  { char: "ビュ", romaji: "byu", type: "katakana", group: "yoon_b", isYoon: true },
+  { char: "ビョ", romaji: "byo", type: "katakana", group: "yoon_b", isYoon: true },
+];
+
 // Danh sách nhóm phụ âm — dùng làm nền cho 10 bài học đầu (bài 1–10)
 const GROUPS = [
   { key: "vowel", label: "Nguyên âm" },
@@ -146,10 +234,12 @@ const GROUPS = [
 ];
 
 /**
- * LESSONS — cấu trúc 14 bài học cố định (áp dụng như nhau cho Hiragana/Katakana/Cả hai).
+ * LESSONS — cấu trúc 20 bài học cố định (áp dụng như nhau cho Hiragana/Katakana/Cả hai).
  *   - kind: "row"    → bài 1–10, dạy chữ mới theo nhóm phụ âm (dùng field `group`)
  *   - kind: "stroke" → bài 11–14, chỉ ôn lại chữ ĐÃ HỌC, lọc theo `strokeLevel`/`lookalike`
  *                      (field `filterKey` trỏ tới giá trị cần so khớp trên mỗi chữ)
+ *   - kind: "yoon"   → bài 15–20, dạy âm ghép (HIRAGANA_YOON/KATAKANA_YOON), lọc theo `group`
+ *                      giống "row" nhưng lấy nguồn chữ từ mảng Yōon riêng, không phải 46 chữ gốc
  */
 const LESSONS = [
   { id: 1, kind: "row", key: "vowel", title: "Nguyên Âm", subtitle: "Dễ như ăn kẹo, đừng có than" },
@@ -198,7 +288,16 @@ const LESSONS = [
     title: "Chữ Dễ Lú",
     subtitle: "Phân biệt đi kẻo lú lẫn banh nóc",
   },
+  { id: 15, kind: "yoon", key: "yoon_k", title: "Yōon K + G", subtitle: "きゃ ぎゃ — xoắn lưỡi tí thôi" },
+  { id: 16, kind: "yoon", key: "yoon_s", title: "Yōon S + J", subtitle: "しゃ じゃ — đừng lộn sh với j" },
+  { id: 17, kind: "yoon", key: "yoon_t", title: "Yōon T + C", subtitle: "ちゃ — có 3 chữ, dễ thở" },
+  { id: 18, kind: "yoon", key: "yoon_n", title: "Yōon N + H + P", subtitle: "にゃ ひゃ ぴゃ — 9 chữ, cày đi" },
+  { id: 19, kind: "yoon", key: "yoon_m", title: "Yōon M + R", subtitle: "みゃ りゃ — sắp xong rồi đó" },
+  { id: 20, kind: "yoon", key: "yoon_b", title: "Yōon B", subtitle: "びゃ — chốt đơn, hết yōon" },
 ];
 
 // Số bài (trong 10 bài 1–10) cần hoàn thành trước khi mở khóa bài 11–14
 const STROKE_LESSONS_UNLOCK_COUNT = 5;
+
+// Số bài (trong 10 bài 1–10) cần hoàn thành trước khi mở khóa bài 15–20 (Yōon)
+const YOON_LESSONS_UNLOCK_COUNT = 8;

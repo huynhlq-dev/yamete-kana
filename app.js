@@ -182,6 +182,10 @@ function isStrokeLessonsUnlocked(scope) {
   return countCompletedRowLessons(scope) >= STROKE_LESSONS_UNLOCK_COUNT;
 }
 
+function isYoonLessonsUnlocked(scope) {
+  return countCompletedRowLessons(scope) >= YOON_LESSONS_UNLOCK_COUNT;
+}
+
 // Các nhóm phụ âm đã "học xong" (bài 1-10 hoàn thành) — nguồn chữ để ôn ở bài 11–14
 function getLearnedGroups(scope) {
   return new Set(
@@ -192,6 +196,12 @@ function getLearnedGroups(scope) {
 // Danh sách chữ của 1 bài học theo phạm vi hiện tại (hiragana/katakana/cả hai)
 function getLessonCardPool(lesson, scope) {
   const types = scope === "both" ? ["hiragana", "katakana"] : [scope];
+
+  if (lesson.kind === "yoon") {
+    const yoonPool = types.flatMap((t) => (t === "hiragana" ? HIRAGANA_YOON : KATAKANA_YOON));
+    return yoonPool.filter((c) => c.group === lesson.key);
+  }
+
   const basePool = types.flatMap((t) => (t === "hiragana" ? HIRAGANA : KATAKANA));
 
   if (lesson.kind === "row") {
@@ -415,7 +425,7 @@ function renderLessonStatusBadge(status) {
 }
 
 function renderLessonCard(lesson, scope, unlocked) {
-  const locked = lesson.kind === "stroke" && !unlocked;
+  const locked = (lesson.kind === "stroke" || lesson.kind === "yoon") && !unlocked;
   const status = getLessonStatus(scope, lesson.key);
   const count = getLessonCardPool(lesson, scope).length;
 
@@ -440,8 +450,10 @@ function renderLessons() {
   const scope = state.scope;
   const rowLessons = LESSONS.filter((l) => l.kind === "row");
   const strokeLessons = LESSONS.filter((l) => l.kind === "stroke");
+  const yoonLessons = LESSONS.filter((l) => l.kind === "yoon");
   const completedRows = countCompletedRowLessons(scope);
-  const unlocked = isStrokeLessonsUnlocked(scope);
+  const strokeUnlocked = isStrokeLessonsUnlocked(scope);
+  const yoonUnlocked = isYoonLessonsUnlocked(scope);
 
   return `
     ${renderAppHeader("Chọn Bài Học (Hay Trốn Tiếp?)")}
@@ -454,12 +466,21 @@ function renderLessons() {
       </div>
 
       <h2 class="text-xs font-semibold text-ink-faint uppercase tracking-wide mb-2">Luyện Nét &amp; Hình (Khó Đấy)</h2>
-      ${unlocked
+      ${strokeUnlocked
       ? ""
       : `<p class="text-xs text-ink-faint mb-4">🔒 Học xong ${completedRows}/${STROKE_LESSONS_UNLOCK_COUNT} bài đã, đòi gì mở khóa</p>`
     }
-      <div class="grid grid-cols-2 md:grid-cols-3 gap-4 ${unlocked ? "mt-4" : ""}">
-        ${strokeLessons.map((l) => renderLessonCard(l, scope, unlocked)).join("")}
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-10 ${strokeUnlocked ? "mt-4" : ""}">
+        ${strokeLessons.map((l) => renderLessonCard(l, scope, strokeUnlocked)).join("")}
+      </div>
+
+      <h2 class="text-xs font-semibold text-ink-faint uppercase tracking-wide mb-2">Âm Ghép (Yōon) — Xoắn Não Đấy</h2>
+      ${yoonUnlocked
+      ? ""
+      : `<p class="text-xs text-ink-faint mb-4">🔒 Học xong ${completedRows}/${YOON_LESSONS_UNLOCK_COUNT} bài đã, đòi gì mở khóa</p>`
+    }
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-4 ${yoonUnlocked ? "mt-4" : ""}">
+        ${yoonLessons.map((l) => renderLessonCard(l, scope, yoonUnlocked)).join("")}
       </div>
     </div>
   `;
@@ -469,11 +490,12 @@ function renderLessons() {
 // HỌC — GIAI ĐOẠN 1: FLASHCARD
 // ============================================================
 
-// Bắt đầu học 1 bài (1–14). Bài "stroke" bị khóa thì bỏ qua (phòng khi UI chưa kịp ẩn nút).
+// Bắt đầu học 1 bài (1–20). Bài "stroke"/"yoon" bị khóa thì bỏ qua (phòng khi UI chưa kịp ẩn nút).
 function startLesson(lessonId) {
   const lesson = LESSONS.find((l) => l.id === lessonId);
   if (!lesson) return;
   if (lesson.kind === "stroke" && !isStrokeLessonsUnlocked(state.scope)) return;
+  if (lesson.kind === "yoon" && !isYoonLessonsUnlocked(state.scope)) return;
 
   const cards = getLessonCardPool(lesson, state.scope);
   const shuffled = shuffle(cards);

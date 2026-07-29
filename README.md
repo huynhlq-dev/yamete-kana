@@ -7,7 +7,8 @@ App học bảng chữ cái tiếng Nhật (Hiragana & Katakana) — HTML + Tail
 ```
 index.html   Khung giao diện, nạp Tailwind CDN + font, chứa <div id="app">
 data.js       46 chữ Hiragana + 46 chữ Katakana (char, romaji, type, group, strokeLevel, lookalike)
-              + LESSONS: cấu trúc 14 bài học cố định
+              + HIRAGANA_YOON/KATAKANA_YOON: 33 âm ghép (Yōon) mỗi bảng, tách riêng khỏi 46 chữ gốc
+              + LESSONS: cấu trúc 20 bài học cố định
 app.js        Toàn bộ state, logic màn hình, xử lý sự kiện
 ```
 
@@ -33,13 +34,17 @@ Không cần cài đặt hay build gì cả:
 ## Luồng sử dụng
 
 - **Trang chủ**: chọn Hiragana / Katakana / Cả hai → "Học" hoặc "Thi 20 câu".
-- **Chọn bài học**: 14 bài, chia 2 nhóm:
+- **Chọn bài học**: 20 bài, chia 3 nhóm:
   - **Học theo hàng** (bài 1–10): mỗi bài dạy 1 nhóm phụ âm mới (Nguyên âm, K, S, T, N, H, M, Y, R, W+N).
   - **Luyện nét & hình dạng** (bài 11–14): chỉ ôn lại chữ **đã học** ở 10 bài trên, nhóm theo độ phức tạp nét vẽ
     (đơn giản/trung bình/phức tạp) hoặc nhóm chữ dễ nhầm hình dạng. 4 bài này **khóa** cho tới khi hoàn thành
     ít nhất 5/10 bài đầu (đổi ở `STROKE_LESSONS_UNLOCK_COUNT` trong `data.js` nếu muốn chặt hơn).
-  - Mỗi bài chạy đủ Flashcard (lật thẻ, đánh dấu Đã nhớ/Chưa nhớ) → Ghép cặp (6–10 cặp/vòng) → đánh dấu bài
-    đó "Đã hoàn thành".
+  - **Âm ghép / Yōon** (bài 15–20): dạy 33 tổ hợp âm ghép mỗi bảng (きゃ, しゃ, ちゃ...), lấy từ
+    `HIRAGANA_YOON`/`KATAKANA_YOON` — không phải chữ trong 46 chữ gốc nên không xuất hiện ở "Thi 20 câu".
+    6 bài này **khóa** cho tới khi hoàn thành ít nhất 8/10 bài "Học theo hàng" (đổi ở
+    `YOON_LESSONS_UNLOCK_COUNT` trong `data.js`).
+  - Mỗi bài chạy đủ Flashcard (lật thẻ, đánh dấu Đã nhớ/Chưa nhớ — có nút bỏ qua để nhảy thẳng sang Ghép cặp)
+    → Ghép cặp (tối đa 10 cặp/vòng) → đánh dấu bài đó "Đã hoàn thành".
   - Chọn "Cả hai" thì mỗi bài gộp chữ của cả Hiragana lẫn Katakana cùng nhóm/độ khó.
 - **Thi 20 câu**: trắc nghiệm 4 đáp án (không phụ thuộc bài học nào, luôn lấy từ toàn bộ phạm vi đã chọn),
   biết đúng/sai ngay → màn Kết quả với danh sách câu sai, có thể "Thi lại" hoặc "Ôn các câu sai" (quay lại
@@ -51,8 +56,8 @@ Toàn bộ tiến độ lưu trong `localStorage` của trình duyệt (không c
 
 - `kana_quiz_progress_v1`: trạng thái đã nhớ/chưa nhớ của từng chữ (flashcard).
 - `kana_quiz_highscore_v1`: điểm cao nhất theo từng phạm vi (Hiragana/Katakana/Cả hai).
-- `kana_quiz_lesson_progress_v1`: trạng thái từng bài học (1–14), lưu riêng theo phạm vi —
-  ví dụ khóa `hiragana_vowel`, `both_stroke_easy`.
+- `kana_quiz_lesson_progress_v1`: trạng thái từng bài học (1–20), lưu riêng theo phạm vi —
+  ví dụ khóa `hiragana_vowel`, `both_stroke_easy`, `hiragana_yoon_k`.
 
 Xóa các key này trong DevTools (Application → Local Storage) để reset tiến độ.
 
@@ -60,4 +65,4 @@ Xóa các key này trong DevTools (Application → Local Storage) để reset ti
 
 Container chính giữ cột hẹp căn giữa (giống mobile) ở hầu hết màn hình kể cả trên desktop, vì đây là các
 tương tác tập trung 1 việc (1 thẻ, 1 câu hỏi) nên không cần dùng hết chiều rộng màn hình lớn. Riêng màn
-**Chọn bài học** dùng lưới rộng hơn (`sm:`/`lg:` breakpoints, 2 → 3 cột) vì có tới 14 thẻ bài học cần hiển thị.
+**Chọn bài học** dùng lưới rộng hơn (`sm:`/`lg:` breakpoints, 2 → 3 cột) vì có tới 20 thẻ bài học cần hiển thị.
