@@ -39,6 +39,23 @@ function saveHighscores(hs) {
   localStorage.setItem(STORAGE_KEYS.HIGHSCORE, JSON.stringify(hs));
 }
 
+const EXAM_RESULT_KEY = "kana_quiz_exam_result_v1";
+
+// { [testId]: { score, pass, correctCount, total, mode, date } } — chỉ giữ kết quả GẦN NHẤT mỗi đề
+function loadExamResults() {
+  try {
+    return JSON.parse(localStorage.getItem(EXAM_RESULT_KEY)) || {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveExamResult(testId, result) {
+  const all = loadExamResults();
+  all[testId] = result;
+  localStorage.setItem(EXAM_RESULT_KEY, JSON.stringify(all));
+}
+
 // Khóa định danh duy nhất cho 1 chữ (dùng để lưu progress & so khớp ghép cặp)
 function cardKey(card) {
   return `${card.type}:${card.char}`;
@@ -251,6 +268,21 @@ const state = {
     wrong: [], // danh sách câu trả lời sai: { card, direction, userAnswer }
     selected: null, // index đáp án user vừa chọn cho câu hiện tại
   },
+
+  examMode: "full", // "full" | "random20" — chọn ở màn danh sách đề, áp dụng cho lần bắt đầu thi kế tiếp
+
+  exam: {
+    testId: null,
+    mode: "full",
+    title: "",
+    questions: [], // mảng câu hỏi đã chốt cho lượt thi này (đã xáo trộn, có thể lặp nếu mode random20)
+    currentIndex: 0,
+    answers: {}, // { [questionIndex]: "A"|"B"|"C"|"D" } — không khóa, cho sửa lại thoải mái tới khi nộp
+    startedAt: null, // Date.now() lúc bắt đầu
+    timerInterval: null, // id của setInterval đếm ngược, phải clear khi rời màn thi
+    submitted: false,
+    result: null, // chốt lúc nộp bài: { correctCount, total, score, pass, elapsedSec, overtime, wrong }
+  },
 };
 
 // ============================================================
@@ -346,6 +378,15 @@ function render() {
     case "quiz-result":
       screenHtml = renderQuizResult();
       break;
+    case "exam-list":
+      screenHtml = renderExamList();
+      break;
+    case "exam-question":
+      screenHtml = renderExamQuestion();
+      break;
+    case "exam-result":
+      screenHtml = renderExamResult();
+      break;
   }
   app.innerHTML = screenHtml + renderFooter();
   if (state.screen === "study-flashcard") activateFlashcardFlip();
@@ -402,6 +443,10 @@ function renderHome() {
         <button data-action="go-quiz"
           class="w-full py-5 rounded-2xl bg-saffron-500 text-ink text-xl font-semibold shadow-lg active:scale-95 transition">
           📝 Vào chịu tội 20 câu
+        </button>
+        <button data-action="go-exam-list"
+          class="w-full py-5 rounded-2xl bg-ink text-white text-xl font-semibold shadow-lg active:scale-95 transition">
+          🎓 Test Final — Đấu Thật Đấy
         </button>
       </div>
 
@@ -1101,6 +1146,309 @@ function reviewWrongCards() {
 }
 
 // ============================================================
+// TEST FINAL — làm đề thi cố định (EXAM_TESTS từ examData.js), có giờ, chấm điểm thang 100
+// ============================================================
+const EXAM_TIME_LIMIT_SEC = 20 * 60;
+
+function formatTime(totalSeconds) {
+  const clamped = Math.max(0, totalSeconds);
+  const m = Math.floor(clamped / 60);
+  const s = clamped % 60;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
+function renderExamList() {
+  const results = loadExamResults();
+
+  return `
+    ${renderAppHeader("Chọn Đề Test Final (Hay Sợ?)")}
+    <div class="px-4 pb-8 pt-6 flex-1">
+      <div class="bg-white rounded-2xl shadow-md p-3 mb-6 grid grid-cols-2 gap-2">
+        <button data-action="set-exam-mode" data-mode="full"
+          class="py-2.5 rounded-xl text-sm font-semibold transition active:scale-95 ${state.examMode === "full" ? "bg-teal-700 text-white shadow" : "bg-cream-border text-ink-soft"
+    }">
+          Làm Đủ Câu
+        </button>
+        <button data-action="set-exam-mode" data-mode="random20"
+          class="py-2.5 rounded-xl text-sm font-semibold transition active:scale-95 ${state.examMode === "random20" ? "bg-teal-700 text-white shadow" : "bg-cream-border text-ink-soft"
+    }">
+          Random 20 Câu
+        </button>
+      </div>
+
+      <div class="flex flex-col gap-4">
+        ${EXAM_TESTS.map((t) => {
+      const r = results[t.id];
+      const countLabel = state.examMode === "random20" ? "20 câu (random, có thể lặp)" : `${t.questions.length} câu`;
+      const badge = r
+        ? `<span class="text-[11px] font-semibold px-2 py-0.5 rounded-full self-start ${r.pass ? "bg-status-ok/10 text-status-ok" : "bg-status-busy/10 text-status-busy"
+        }">${r.pass ? "✓ Lần trước: ĐẠT" : "✗ Lần trước: KHÔNG ĐẠT"} (${r.score}đ)</span>`
+        : `<span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-cream-border text-ink-faint self-start">Chưa thi lần nào, sợ à?</span>`;
+      return `
+          <button data-action="start-exam" data-test-id="${t.id}"
+            class="text-left p-4 rounded-2xl shadow bg-white transition active:scale-95 flex flex-col gap-1.5">
+            <p class="font-semibold text-ink">${t.title}</p>
+            <p class="text-xs text-ink-soft">${countLabel} · 20 phút</p>
+            ${badge}
+          </button>`;
+    }).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function setExamMode(mode) {
+  state.examMode = mode;
+  render();
+}
+
+// Random20: xáo trộn lặp lại tới khi đủ 20 câu (đề gốc chỉ có 12-14 câu nên phải lặp mới đủ)
+function buildExamQuestions(test, mode) {
+  if (mode === "full") return shuffle(test.questions);
+  let pool = [];
+  while (pool.length < 20) pool = pool.concat(shuffle(test.questions));
+  return pool.slice(0, 20);
+}
+
+function startExam(testId) {
+  const test = EXAM_TESTS.find((t) => t.id === testId);
+  if (!test) return;
+  const mode = state.examMode;
+
+  state.exam = {
+    testId: test.id,
+    mode,
+    title: test.title,
+    questions: buildExamQuestions(test, mode),
+    currentIndex: 0,
+    answers: {},
+    startedAt: Date.now(),
+    timerInterval: null,
+    submitted: false,
+    result: null,
+  };
+
+  state.screen = "exam-question";
+  render();
+  startExamTimer();
+}
+
+function retryExam() {
+  startExam(state.exam.testId);
+}
+
+function selectExamAnswer(letter) {
+  state.exam.answers[state.exam.currentIndex] = letter;
+  render();
+}
+
+function examNext() {
+  const ex = state.exam;
+  if (ex.currentIndex < ex.questions.length - 1) {
+    ex.currentIndex++;
+    render();
+  }
+}
+
+function examPrev() {
+  const ex = state.exam;
+  if (ex.currentIndex > 0) {
+    ex.currentIndex--;
+    render();
+  }
+}
+
+// Đếm ngược cập nhật trực tiếp DOM mỗi giây, không render() lại cả màn để khỏi giật/ngắt thao tác
+function tickExamTimer() {
+  const el = document.getElementById("exam-timer");
+  if (!el) return; // đã rời màn thi nhưng interval chưa kịp clear
+  const elapsedSec = Math.floor((Date.now() - state.exam.startedAt) / 1000);
+  const remaining = EXAM_TIME_LIMIT_SEC - elapsedSec;
+  if (remaining <= 0) {
+    el.textContent = "⏱ QUÁ GIỜ";
+    el.className = "font-bold text-white bg-status-busy px-3 py-1 rounded-full";
+  } else {
+    el.textContent = `⏱ ${formatTime(remaining)}`;
+    el.className = "font-bold text-ink-soft bg-white/70 px-3 py-1 rounded-full";
+  }
+}
+
+function startExamTimer() {
+  stopExamTimer();
+  state.exam.timerInterval = setInterval(tickExamTimer, 1000);
+  tickExamTimer();
+}
+
+function stopExamTimer() {
+  if (state.exam.timerInterval) {
+    clearInterval(state.exam.timerInterval);
+    state.exam.timerInterval = null;
+  }
+}
+
+function exitExam() {
+  if (!confirm("Thoát thi luôn? Bài làm dở sẽ mất, không lưu lại đâu.")) return;
+  stopExamTimer();
+  state.screen = "exam-list";
+  render();
+}
+
+function submitExam() {
+  const ex = state.exam;
+  const total = ex.questions.length;
+  const answeredCount = Object.keys(ex.answers).length;
+  if (answeredCount < total && !confirm(`Mới làm ${answeredCount}/${total} câu thôi, chắc chắn nộp luôn?`)) {
+    return;
+  }
+
+  stopExamTimer();
+  const elapsedSec = Math.floor((Date.now() - ex.startedAt) / 1000);
+  const overtime = elapsedSec > EXAM_TIME_LIMIT_SEC;
+
+  let correctCount = 0;
+  const wrong = [];
+  ex.questions.forEach((q, idx) => {
+    const userAnswer = ex.answers[idx] || null;
+    if (userAnswer === q.answer) correctCount++;
+    else wrong.push({ question: q, userAnswer });
+  });
+
+  const score = Math.round((correctCount / total) * 100);
+  const pass = score >= 80;
+
+  ex.result = { correctCount, total, score, pass, elapsedSec, overtime, wrong };
+  ex.submitted = true;
+
+  saveExamResult(ex.testId, { score, pass, correctCount, total, mode: ex.mode, date: new Date().toISOString() });
+
+  state.screen = "exam-result";
+  render();
+}
+
+function renderExamQuestion() {
+  const ex = state.exam;
+  const q = ex.questions[ex.currentIndex];
+  const selected = ex.answers[ex.currentIndex] || null;
+  const total = ex.questions.length;
+  const isFirst = ex.currentIndex === 0;
+  const isLast = ex.currentIndex === total - 1;
+
+  const optionsHtml = ["A", "B", "C", "D"]
+    .map(
+      (letter) => `
+      <button data-action="select-exam-answer" data-letter="${letter}"
+        class="w-full text-left py-3 px-4 rounded-2xl border-2 transition active:scale-[0.98] ${selected === letter ? "bg-teal-700 text-white border-teal-700" : "bg-white text-ink border-transparent shadow"
+        }">
+        <span class="font-bold mr-2">${letter}.</span>${q.options[letter]}
+      </button>`
+    )
+    .join("");
+
+  return `
+    ${renderAppHeader(ex.title, "exit-exam")}
+    <div class="px-5 pb-8 pt-6 flex-1">
+      <div class="flex justify-between items-center text-sm font-medium text-ink-faint mb-6">
+        <span>Câu ${ex.currentIndex + 1}/${total}</span>
+        <span id="exam-timer" class="font-bold text-ink-soft bg-white/70 px-3 py-1 rounded-full">⏱ --:--</span>
+      </div>
+
+      <div class="w-full min-h-[120px] py-8 px-5 rounded-3xl bg-white shadow-xl flex items-center justify-center mb-6">
+        <p class="text-2xl font-semibold text-ink text-center">${q.question_text}</p>
+      </div>
+
+      <div class="flex flex-col gap-3 mb-6">
+        ${optionsHtml}
+      </div>
+
+      <div class="flex gap-3 mb-3">
+        <button data-action="exam-prev" ${isFirst ? "disabled" : ""}
+          class="flex-1 py-3 rounded-2xl bg-cream-border text-ink-soft font-semibold transition active:scale-95 disabled:opacity-40">
+          ← Câu Trước
+        </button>
+        <button data-action="exam-next" ${isLast ? "disabled" : ""}
+          class="flex-1 py-3 rounded-2xl bg-cream-border text-ink-soft font-semibold transition active:scale-95 disabled:opacity-40">
+          Câu Tiếp →
+        </button>
+      </div>
+      <button data-action="submit-exam"
+        class="w-full py-4 rounded-2xl bg-status-busy text-white text-lg font-bold shadow active:scale-95 transition">
+        🚩 Nộp Bài
+      </button>
+    </div>
+  `;
+}
+
+// Bảng tách âm {kana, romaji} — chỉ hiện ở màn xem lại câu sai, không hiện lúc đang thi
+function renderBreakdownTable(breakdown) {
+  if (!breakdown || breakdown.length === 0) return "";
+  const cols = breakdown.length;
+  const kanaRow = breakdown
+    .map((p) => `<div class="text-center py-1.5 text-lg font-medium bg-cream-surface border border-cream-border">${p.kana}</div>`)
+    .join("");
+  const romajiRow = breakdown
+    .map((p) => `<div class="text-center py-1.5 text-xs text-teal-700 font-semibold bg-cream-surface border border-cream-border">${p.romaji}</div>`)
+    .join("");
+  return `
+    <div class="mt-1 overflow-x-auto">
+      <div class="grid rounded-lg overflow-hidden" style="grid-template-columns: repeat(${cols}, minmax(32px, 1fr));">
+        ${kanaRow}${romajiRow}
+      </div>
+    </div>
+  `;
+}
+
+function renderExamResult() {
+  const ex = state.exam;
+  const r = ex.result;
+  const timeLabel = `${formatTime(r.elapsedSec)}${r.overtime ? ` (Quá giờ ${formatTime(r.elapsedSec - EXAM_TIME_LIMIT_SEC)})` : ""}`;
+
+  const wrongHtml = r.wrong.length
+    ? r.wrong
+      .map(
+        ({ question: q, userAnswer }) => `
+      <div class="bg-white rounded-xl shadow p-4 flex flex-col gap-1.5">
+        <p class="text-base font-semibold text-ink">${q.question_text}</p>
+        <p class="text-sm text-status-busy font-medium">Bạn chọn: ${userAnswer ? q.options[userAnswer] : "(bỏ trống, lười vậy)"
+          }</p>
+        <p class="text-sm text-status-ok font-medium">Đáp án đúng: ${q.options[q.answer]}</p>
+        ${renderBreakdownTable(q.breakdown)}
+      </div>`
+      )
+      .join("")
+    : `<p class="text-center text-ink-faint text-sm py-4">🎉 Không sai câu nào, quá đỉnh</p>`;
+
+  return `
+    ${renderAppHeader("Kết Quả Test Final")}
+    <div class="px-5 pb-8 pt-6 flex-1">
+      <div class="bg-white rounded-3xl shadow-xl p-6 text-center mb-6">
+        <p class="text-5xl font-bold ${r.pass ? "text-status-ok" : "text-status-busy"}">${r.score}<span class="text-2xl">/100</span></p>
+        <p class="text-lg font-bold mt-2 ${r.pass ? "text-status-ok" : "text-status-busy"}">${r.pass ? "✅ ĐẠT" : "❌ KHÔNG ĐẠT"}</p>
+        <p class="text-ink-soft font-medium mt-2">${r.correctCount}/${r.total} câu đúng</p>
+        <p class="text-sm mt-1 ${r.overtime ? "text-status-busy font-semibold" : "text-ink-faint"}">⏱ ${timeLabel}</p>
+      </div>
+
+      <div class="flex flex-col gap-3 mb-8">
+        ${wrongHtml}
+      </div>
+
+      <div class="flex flex-col gap-4">
+        <button data-action="retry-exam"
+          class="w-full py-4 rounded-2xl bg-teal-700 text-white text-lg font-semibold shadow active:scale-95 transition">
+          🔄 Thi Lại Đề Này
+        </button>
+        <button data-action="go-exam-list"
+          class="w-full py-4 rounded-2xl bg-saffron-500 text-ink text-lg font-semibold shadow active:scale-95 transition">
+          📋 Chọn Đề Khác
+        </button>
+        <button data-action="go-home" class="w-full py-3 text-ink-faint font-medium">
+          Trốn Về Nhà
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+// ============================================================
 // EVENT DELEGATION — xử lý toàn bộ tương tác click / change
 // ============================================================
 document.getElementById("app").addEventListener("click", (e) => {
@@ -1163,6 +1511,35 @@ document.getElementById("app").addEventListener("click", (e) => {
       break;
     case "review-wrong":
       reviewWrongCards();
+      break;
+    case "go-exam-list":
+      stopExamTimer();
+      state.screen = "exam-list";
+      render();
+      break;
+    case "set-exam-mode":
+      setExamMode(target.dataset.mode);
+      break;
+    case "start-exam":
+      startExam(Number(target.dataset.testId));
+      break;
+    case "select-exam-answer":
+      selectExamAnswer(target.dataset.letter);
+      break;
+    case "exam-prev":
+      examPrev();
+      break;
+    case "exam-next":
+      examNext();
+      break;
+    case "exit-exam":
+      exitExam();
+      break;
+    case "submit-exam":
+      submitExam();
+      break;
+    case "retry-exam":
+      retryExam();
       break;
   }
 });

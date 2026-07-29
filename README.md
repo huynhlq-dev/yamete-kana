@@ -9,6 +9,9 @@ index.html   Khung giao diện, nạp Tailwind CDN + font, chứa <div id="app">
 data.js       46 chữ Hiragana + 46 chữ Katakana (char, romaji, type, group, strokeLevel, lookalike)
               + HIRAGANA_YOON/KATAKANA_YOON: 33 âm ghép (Yōon) mỗi bảng, tách riêng khỏi 46 chữ gốc
               + LESSONS: cấu trúc 20 bài học cố định
+examData.js   EXAM_TESTS: 4 đề "Test Final" cố định (sinh từ Tests.JSON), mỗi câu có
+              question_text/options/answer + breakdown (tách âm kana, chỉ hiện ở màn xem câu sai)
+Tests.JSON    Nguồn gốc của examData.js — sửa tay khi cần, rồi chạy lại script sinh examData.js
 app.js        Toàn bộ state, logic màn hình, xử lý sự kiện
 ```
 
@@ -49,6 +52,16 @@ Không cần cài đặt hay build gì cả:
 - **Thi 20 câu**: trắc nghiệm 4 đáp án (không phụ thuộc bài học nào, luôn lấy từ toàn bộ phạm vi đã chọn),
   biết đúng/sai ngay → màn Kết quả với danh sách câu sai, có thể "Thi lại" hoặc "Ôn các câu sai" (quay lại
   flashcard chỉ với các chữ đã sai — không tính vào tiến độ bài học).
+- **Test Final**: 4 đề cố định độc lập với bảng chữ/bài học ở trên (mỗi đề tự chứa cả câu hỏi kana lẫn
+  romaji, cả từ đơn lẫn câu). Chọn chế độ trước khi vào đề:
+  - **Làm đủ câu** (mặc định): lấy toàn bộ số câu đề đó có (12 hoặc 14 câu tùy đề), xáo thứ tự, không lặp.
+  - **Random 20 câu**: luôn ra đúng 20 lượt hỏi — vì đề gốc chỉ có 12–14 câu nên chế độ này **cho phép lặp
+    câu** để đủ số lượng.
+  - 20 phút/lượt, đồng hồ đếm ngược; hết giờ vẫn làm tiếp được, đồng hồ chỉ chuyển đỏ + hiện "QUÁ GIỜ".
+  - Không chấm đúng/sai ngay như "Thi 20 câu" — có thể tự do đổi câu trả lời, đi tới/lui giữa các câu, tới
+    khi bấm "Nộp Bài" mới chấm. Kết quả: điểm/100, ĐẠT (≥80) hay KHÔNG ĐẠT, thời gian làm bài (báo rõ nếu
+    quá giờ), và danh sách câu sai kèm bảng tách âm (kana ↔ romaji) để ôn lại.
+  - Kết quả **gần nhất** mỗi đề được lưu lại, hiện thành badge ở màn chọn đề.
 
 ## Lưu trữ
 
@@ -58,6 +71,7 @@ Toàn bộ tiến độ lưu trong `localStorage` của trình duyệt (không c
 - `kana_quiz_highscore_v1`: điểm cao nhất theo từng phạm vi (Hiragana/Katakana/Cả hai).
 - `kana_quiz_lesson_progress_v1`: trạng thái từng bài học (1–20), lưu riêng theo phạm vi —
   ví dụ khóa `hiragana_vowel`, `both_stroke_easy`, `hiragana_yoon_k`.
+- `kana_quiz_exam_result_v1`: kết quả **gần nhất** của mỗi đề Test Final (điểm, đạt/không đạt, ngày làm).
 
 Xóa các key này trong DevTools (Application → Local Storage) để reset tiến độ.
 
