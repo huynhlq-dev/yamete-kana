@@ -197,36 +197,102 @@
       animation: toastOut 0.2s ease-in forwards;
     }
 
-    /* Nút feedback nổi — nằm ngoài #app nên không bị xoá mỗi khi render() thay màn hình */
+    /* Nút feedback nổi — nằm ngoài #app nên không bị xoá mỗi khi render() thay màn hình.
+       Kiểu outline hồng để nổi hẳn lên khỏi nền (bản solid teal cũ bị hòa màu với header/nút khác). */
     .feedback-fab {
       position: fixed;
       right: 16px;
       /* 56px chừa đủ chỗ cho footer bản quyền (~38px cao) luôn nằm dưới cùng mọi màn hình,
          không thì FAB đè lên chữ footer — đã thấy lỗi này trên máy thật */
       bottom: calc(56px + env(safe-area-inset-bottom, 0px));
-      z-index: 40;
+      z-index: 46;
       width: 50px;
       height: 50px;
       border-radius: 9999px;
-      background: #1C564C;
-      color: #fff;
-      border: none;
+      background: #fff;
+      color: #EC4899;
+      border: 2px solid #EC4899;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 22px;
       line-height: 1;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
       cursor: pointer;
-      transition: transform 0.15s ease;
+      transition: transform 0.15s ease, background 0.15s ease;
     }
 
     .feedback-fab:hover {
+      background: #FDF2F8;
       transform: scale(1.06);
     }
 
     .feedback-fab:active {
       transform: scale(0.92);
+    }
+
+    /* Nền mờ phía sau mini menu — tách menu khỏi nội dung trang (đỡ đè chữ lên nút bên dưới khi
+       màn hình dài hơn 1 viewport), đồng thời bấm vào đây cũng đóng menu luôn. */
+    .feedback-menu-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(20, 24, 20, 0.35);
+      z-index: 43;
+      animation: feedbackFadeIn 0.15s ease-out;
+    }
+
+    .feedback-menu-backdrop.hidden {
+      display: none;
+    }
+
+    /* Mini menu bật lên từ FAB — 2 lựa chọn: mời cà phê / gửi góp ý */
+    .feedback-menu {
+      position: fixed;
+      right: 16px;
+      bottom: calc(56px + 62px + env(safe-area-inset-bottom, 0px));
+      z-index: 45;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+      animation: feedbackMenuIn 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .feedback-menu.hidden {
+      display: none;
+    }
+
+    @keyframes feedbackMenuIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.9);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .feedback-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      background: #fff;
+      color: #232823;
+      border: none;
+      border-radius: 9999px;
+      padding: 11px 18px;
+      font-size: 14px;
+      font-weight: 700;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+
+    .feedback-menu-item:active {
+      transform: scale(0.95);
     }
 
     .feedback-modal-overlay {
@@ -336,6 +402,50 @@
       border: none;
       display: block;
     }
+
+    /* Modal "mời cà phê" — nhỏ gọn hơn modal Google Form, chỉ QR + text + nút tải */
+    .coffee-modal-body {
+      padding: 24px 20px 28px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      background: #FBFAF6;
+      overflow: auto;
+    }
+
+    .coffee-qr-image {
+      width: 100%;
+      max-width: 260px;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+      background: #fff;
+    }
+
+    .coffee-modal-text {
+      text-align: center;
+      font-size: 14px;
+      font-weight: 600;
+      color: #6F746D;
+    }
+
+    .coffee-download-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #1C564C;
+      color: #fff;
+      border-radius: 9999px;
+      padding: 12px 22px;
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform 0.15s ease;
+    }
+
+    .coffee-download-btn:active {
+      transform: scale(0.95);
+    }
   </style>
 </head>
 
@@ -344,13 +454,37 @@
   <!-- class (độ rộng khung) được app.js gán động theo từng màn hình, xem containerClass() trong app.js -->
   <div id="app" class="min-h-screen max-w-md mx-auto"></div>
 
-  <!-- Nút feedback nổi + modal Google Form — cố tình đặt ngoài #app để sống sót qua mọi lần render() -->
-  <button id="feedback-fab" class="feedback-fab" aria-label="feedback" title="feedback">💌</button>
+  <!-- Nút feedback nổi + mini menu + 2 modal (cà phê / Google Form) — cố tình đặt ngoài #app để
+       sống sót qua mọi lần render() -->
+  <button id="feedback-fab" class="feedback-fab" aria-label="Feedback / ủng hộ tác giả" title="Feedback / ủng hộ tác giả">💬</button>
+
+  <div id="feedback-menu-backdrop" class="feedback-menu-backdrop hidden"></div>
+  <div id="feedback-menu" class="feedback-menu hidden">
+    <button id="feedback-menu-coffee" class="feedback-menu-item">☕ Gửi tác giả ly cafe</button>
+    <button id="feedback-menu-form" class="feedback-menu-item">💬 Gửi góp ý</button>
+  </div>
+
+  <div id="coffee-modal-overlay" class="feedback-modal-overlay hidden">
+    <div class="feedback-modal-box" style="max-width: 380px;" role="dialog" aria-modal="true"
+      aria-labelledby="coffee-modal-title">
+      <div class="feedback-modal-header">
+        <span id="coffee-modal-title" class="feedback-modal-title">☕ Mời Tác Giả Cà Phê</span>
+        <button id="coffee-modal-close" class="feedback-modal-close" aria-label="Đóng">✕</button>
+      </div>
+      <div class="coffee-modal-body">
+        <img src="qr-cafe.png" alt="QR chuyển khoản ủng hộ tác giả" class="coffee-qr-image" />
+        <p class="coffee-modal-text">Cảm ơn bạn đã ủng hộ ly cà phê! ☕💚</p>
+        <a id="coffee-qr-download" href="qr-cafe.png" download="yamete-kana-qr-cafe.png" class="coffee-download-btn">
+          📥 Tải Ảnh QR
+        </a>
+      </div>
+    </div>
+  </div>
 
   <div id="feedback-modal-overlay" class="feedback-modal-overlay hidden">
     <div class="feedback-modal-box" role="dialog" aria-modal="true" aria-labelledby="feedback-modal-title">
       <div class="feedback-modal-header">
-        <span id="feedback-modal-title" class="feedback-modal-title">💌 Feedback</span>
+        <span id="feedback-modal-title" class="feedback-modal-title">💬 Gửi Góp Ý</span>
         <button id="feedback-modal-close" class="feedback-modal-close" aria-label="Đóng">✕</button>
       </div>
       <div class="feedback-modal-body">

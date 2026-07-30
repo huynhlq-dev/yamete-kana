@@ -1752,28 +1752,75 @@ document.getElementById("app").addEventListener("click", (e) => {
 // FEEDBACK MODAL — nút nổi + iframe Google Form, sống ngoài #app nên xử lý riêng, không qua
 // event delegation của #app (vì render() không đụng tới các phần tử này).
 // ============================================================
-(function setupFeedbackModal() {
+(function setupFeedbackWidget() {
   const fab = document.getElementById("feedback-fab");
-  const overlay = document.getElementById("feedback-modal-overlay");
-  const closeBtn = document.getElementById("feedback-modal-close");
-  const iframe = document.getElementById("feedback-modal-iframe");
+  const menu = document.getElementById("feedback-menu");
+  const menuBackdrop = document.getElementById("feedback-menu-backdrop");
+  const menuCoffeeBtn = document.getElementById("feedback-menu-coffee");
+  const menuFormBtn = document.getElementById("feedback-menu-form");
 
-  function openFeedbackModal() {
-    if (!iframe.src) iframe.src = iframe.dataset.src; // nạp iframe lần đầu mở, tránh tải form thừa
-    overlay.classList.remove("hidden");
+  const formOverlay = document.getElementById("feedback-modal-overlay");
+  const formCloseBtn = document.getElementById("feedback-modal-close");
+  const formIframe = document.getElementById("feedback-modal-iframe");
+
+  const coffeeOverlay = document.getElementById("coffee-modal-overlay");
+  const coffeeCloseBtn = document.getElementById("coffee-modal-close");
+
+  const closeMenu = () => {
+    menu.classList.add("hidden");
+    menuBackdrop.classList.add("hidden");
+  };
+  const toggleMenu = () => {
+    menu.classList.toggle("hidden");
+    menuBackdrop.classList.toggle("hidden");
+  };
+
+  function openFormModal() {
+    if (!formIframe.src) formIframe.src = formIframe.dataset.src; // nạp iframe lần đầu mở, tránh tải form thừa
+    formOverlay.classList.remove("hidden");
   }
+  const closeFormModal = () => formOverlay.classList.add("hidden");
 
-  function closeFeedbackModal() {
-    overlay.classList.add("hidden");
-  }
+  const openCoffeeModal = () => coffeeOverlay.classList.remove("hidden");
+  const closeCoffeeModal = () => coffeeOverlay.classList.add("hidden");
 
-  fab.addEventListener("click", openFeedbackModal);
-  closeBtn.addEventListener("click", closeFeedbackModal);
-  overlay.addEventListener("click", (e) => {
-    if (e.target === overlay) closeFeedbackModal(); // bấm ra ngoài modal (nền tối) cũng đóng được
+  fab.addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleMenu();
   });
+
+  menuCoffeeBtn.addEventListener("click", () => {
+    closeMenu();
+    openCoffeeModal();
+  });
+
+  menuFormBtn.addEventListener("click", () => {
+    closeMenu();
+    openFormModal();
+  });
+
+  // Bấm ra ngoài menu (và không phải chính nút FAB) thì đóng menu
+  document.addEventListener("click", (e) => {
+    if (!menu.classList.contains("hidden") && !menu.contains(e.target) && e.target !== fab) {
+      closeMenu();
+    }
+  });
+
+  formCloseBtn.addEventListener("click", closeFormModal);
+  formOverlay.addEventListener("click", (e) => {
+    if (e.target === formOverlay) closeFormModal();
+  });
+
+  coffeeCloseBtn.addEventListener("click", closeCoffeeModal);
+  coffeeOverlay.addEventListener("click", (e) => {
+    if (e.target === coffeeOverlay) closeCoffeeModal();
+  });
+
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !overlay.classList.contains("hidden")) closeFeedbackModal();
+    if (e.key !== "Escape") return;
+    if (!coffeeOverlay.classList.contains("hidden")) closeCoffeeModal();
+    else if (!formOverlay.classList.contains("hidden")) closeFormModal();
+    else if (!menu.classList.contains("hidden")) closeMenu();
   });
 })();
 
