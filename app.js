@@ -1513,7 +1513,7 @@ function checkTypingMatch(inputEl) {
   const target = t.words[t.currentIndex];
   const resolve = t.scope === "hiragana" ? wanakana.toHiragana : wanakana.toKatakana;
   const resolved = resolve(inputEl.value);
-  if (resolved !== target) return;
+  if (resolved !== target.kana) return;
 
   inputEl.value = resolved;
   inputEl.disabled = true;
@@ -1566,8 +1566,9 @@ function renderTypingPractice() {
     <div class="px-5 pb-8 pt-6 flex-1">
       <p class="text-center text-sm text-ink-faint font-medium mb-6">Từ ${t.currentIndex + 1}/${total}</p>
 
-      <div class="w-full py-10 rounded-3xl bg-white shadow-xl flex items-center justify-center mb-6">
-        <p class="text-5xl font-semibold text-ink tracking-wide">${target}</p>
+      <div class="w-full py-10 rounded-3xl bg-white shadow-xl flex flex-col items-center justify-center gap-2 mb-6">
+        <p class="text-5xl font-semibold text-ink tracking-wide">${target.kana}</p>
+        <p class="text-base font-medium text-ink-faint">${target.vi}</p>
       </div>
 
       <input id="typing-input" type="text" placeholder="Gõ romaji vào đây…"

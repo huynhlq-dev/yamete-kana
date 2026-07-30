@@ -304,7 +304,8 @@ const YOON_LESSONS_UNLOCK_COUNT = 8;
 
 /**
  * TYPING_WORDS_HIRAGANA / TYPING_WORDS_KATAKANA — ngân hàng từ cho tính năng "Luyện gõ tiếng Nhật".
- * Chỉ là chuỗi kana (không cần romaji đi kèm — wanakana tự so khớp 2 chiều lúc chấm điểm).
+ * Mỗi phần tử: { kana, vi } — kana để so khớp lúc gõ (wanakana tự so khớp 2 chiều lúc chấm điểm),
+ * vi là nghĩa tiếng Việt hiện song song bên dưới chữ Nhật.
  *
  * Cố tình TRÁNH mọi từ có ん đứng ngay trước hàng な/や/わ (vd こんにちは, でんわ, ほんや) — đây là
  * pattern wanakana convert SAI lúc gõ realtime (đã kiểm chứng: "konnichiha" ra "こんいちは" thay vì
@@ -313,27 +314,27 @@ const YOON_LESSONS_UNLOCK_COUNT = 8;
  * test kỹ và chạy đúng.
  */
 const TYPING_WORDS_HIRAGANA = [
-  "ありがとう", // arigatou
-  "おはよう", // ohayou
-  "さようなら", // sayounara
-  "すみません", // sumimasen
-  "がっこう", // gakkou
-  "べんきょう", // benkyou
-  "しゃしん", // shashin
-  "ぎゅうにゅう", // gyuunyuu
-  "きって", // kitte
-  "せんせい", // sensei
+  { kana: "ありがとう", vi: "Cảm ơn" }, // arigatou
+  { kana: "おはよう", vi: "Chào buổi sáng" }, // ohayou
+  { kana: "さようなら", vi: "Tạm biệt" }, // sayounara
+  { kana: "すみません", vi: "Xin lỗi" }, // sumimasen
+  { kana: "がっこう", vi: "Trường học" }, // gakkou
+  { kana: "べんきょう", vi: "Việc học" }, // benkyou
+  { kana: "しゃしん", vi: "Ảnh chụp" }, // shashin
+  { kana: "ぎゅうにゅう", vi: "Sữa bò" }, // gyuunyuu
+  { kana: "きって", vi: "Tem thư" }, // kitte
+  { kana: "せんせい", vi: "Giáo viên" }, // sensei
 ];
 
 const TYPING_WORDS_KATAKANA = [
-  "テレビ", // terebi
-  "カメラ", // kamera
-  "ジュース", // juusu
-  "サッカー", // sakka-
-  "ホテル", // hoteru
-  "タクシー", // takushi-
-  "ピザ", // piza
-  "コンピューター", // konpyu-ta-
-  "ケーキ", // ke-ki
-  "ノート", // no-to
+  { kana: "テレビ", vi: "Tivi" }, // terebi
+  { kana: "カメラ", vi: "Máy ảnh" }, // kamera
+  { kana: "ジュース", vi: "Nước ép" }, // juusu
+  { kana: "サッカー", vi: "Bóng đá" }, // sakka-
+  { kana: "ホテル", vi: "Khách sạn" }, // hoteru
+  { kana: "タクシー", vi: "Taxi" }, // takushi-
+  { kana: "ピザ", vi: "Pizza" }, // piza
+  { kana: "コンピューター", vi: "Máy tính" }, // konpyu-ta-
+  { kana: "ケーキ", vi: "Bánh kem" }, // ke-ki
+  { kana: "ノート", vi: "Vở, sổ tay" }, // no-to
 ];
