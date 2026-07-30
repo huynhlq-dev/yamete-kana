@@ -1545,6 +1545,35 @@ document.getElementById("app").addEventListener("click", (e) => {
 });
 
 // ============================================================
+// FEEDBACK MODAL — nút nổi + iframe Google Form, sống ngoài #app nên xử lý riêng, không qua
+// event delegation của #app (vì render() không đụng tới các phần tử này).
+// ============================================================
+(function setupFeedbackModal() {
+  const fab = document.getElementById("feedback-fab");
+  const overlay = document.getElementById("feedback-modal-overlay");
+  const closeBtn = document.getElementById("feedback-modal-close");
+  const iframe = document.getElementById("feedback-modal-iframe");
+
+  function openFeedbackModal() {
+    if (!iframe.src) iframe.src = iframe.dataset.src; // nạp iframe lần đầu mở, tránh tải form thừa
+    overlay.classList.remove("hidden");
+  }
+
+  function closeFeedbackModal() {
+    overlay.classList.add("hidden");
+  }
+
+  fab.addEventListener("click", openFeedbackModal);
+  closeBtn.addEventListener("click", closeFeedbackModal);
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) closeFeedbackModal(); // bấm ra ngoài modal (nền tối) cũng đóng được
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !overlay.classList.contains("hidden")) closeFeedbackModal();
+  });
+})();
+
+// ============================================================
 // KHỞI ĐỘNG APP
 // ============================================================
 render();
