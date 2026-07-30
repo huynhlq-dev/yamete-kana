@@ -677,7 +677,7 @@ function renderStudyFlashcard() {
 
       <p class="text-center text-sm text-ink-faint font-medium mb-6">${progressText}</p>
 
-      <div class="flip-scene w-full aspect-square max-h-[45vh] mb-4 active:scale-[0.98] transition">
+      <div class="flip-scene w-full aspect-square mb-4 active:scale-[0.98] transition">
         <div id="flip-card-inner" data-action="flip-card" class="flip-card cursor-pointer">
           <div class="flip-face rounded-3xl bg-white shadow-xl flex items-center justify-center">
             <span class="text-8xl font-medium text-ink">${card.char}</span>

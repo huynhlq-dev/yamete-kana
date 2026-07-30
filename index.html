@@ -100,6 +100,10 @@
     /* Hiệu ứng lật thẻ flashcard (3D flip) */
     .flip-scene {
       perspective: 1400px;
+      /* dvh thay vì vh của Tailwind (max-h-[45vh] đã bỏ khỏi class list) — vh tính theo lúc
+         thanh trình duyệt ẩn hẳn nên trên máy thật thẻ bị cao hơn thực tế, đè lên input bên dưới. */
+      max-height: 45vh;
+      max-height: 45dvh;
     }
 
     .flip-card {
@@ -177,11 +181,13 @@
     /* Nút feedback nổi — nằm ngoài #app nên không bị xoá mỗi khi render() thay màn hình */
     .feedback-fab {
       position: fixed;
-      right: 18px;
-      bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+      right: 16px;
+      /* 56px chừa đủ chỗ cho footer bản quyền (~38px cao) luôn nằm dưới cùng mọi màn hình,
+         không thì FAB đè lên chữ footer — đã thấy lỗi này trên máy thật */
+      bottom: calc(56px + env(safe-area-inset-bottom, 0px));
       z-index: 40;
-      width: 56px;
-      height: 56px;
+      width: 50px;
+      height: 50px;
       border-radius: 9999px;
       background: #1C564C;
       color: #fff;
@@ -189,7 +195,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 26px;
+      font-size: 22px;
       line-height: 1;
       box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
       cursor: pointer;
