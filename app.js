@@ -1519,6 +1519,7 @@ function checkTypingMatch(inputEl) {
   inputEl.disabled = true;
   t.correctCount++;
   showToast("correct");
+  document.getElementById("typing-hint-chip")?.classList.remove("hidden");
   setTimeout(advanceTypingWord, 700);
 }
 
