@@ -1532,6 +1532,13 @@ function advanceTypingWord() {
   render();
 }
 
+// Chỉ toggle hiển thị chip bằng DOM trực tiếp, KHÔNG qua state/render() — vì render() sẽ tạo lại
+// input từ đầu, xoá mất chữ romaji user đang gõ dở lúc họ tap xem gợi ý.
+function toggleTypingHint() {
+  const chip = document.getElementById("typing-hint-chip");
+  if (chip) chip.classList.toggle("hidden");
+}
+
 function skipTypingWord() {
   state.typing.skippedCount++;
   advanceTypingWord();
@@ -1560,16 +1567,24 @@ function renderTypingPractice() {
   const target = t.words[t.currentIndex];
   const total = t.words.length;
   const scopeLabel = t.scope === "hiragana" ? "Hiragana" : "Katakana";
+  const romaji = wanakana.toRomaji(target.kana);
 
   return `
     ${renderAppHeader(`Luyện Gõ — ${scopeLabel}`, "go-typing-scope")}
     <div class="px-5 pb-8 pt-6 flex-1">
       <p class="text-center text-sm text-ink-faint font-medium mb-6">Từ ${t.currentIndex + 1}/${total}</p>
 
-      <div class="w-full py-10 rounded-3xl bg-white shadow-xl flex flex-col items-center justify-center gap-2 mb-6">
-        <p class="text-5xl font-semibold text-ink tracking-wide">${target.kana}</p>
+      <div class="w-full py-10 rounded-3xl bg-white shadow-xl flex flex-col items-center justify-center gap-2 mb-3">
+        <p data-action="toggle-typing-hint"
+          class="text-5xl font-semibold text-ink tracking-wide cursor-pointer select-none active:opacity-70 transition">
+          ${target.kana}
+        </p>
+        <span id="typing-hint-chip" class="hidden px-3 py-1 rounded-full bg-teal-700/10 text-teal-700 text-sm font-bold tracking-wide">
+          ${romaji}
+        </span>
         <p class="text-base font-medium text-ink-faint">${target.vi}</p>
       </div>
+      <p class="text-center text-xs text-ink-faint mb-6">👆 Bí quá thì chạm vào chữ xem gợi ý</p>
 
       <input id="typing-input" type="text" placeholder="Gõ romaji vào đây…"
         autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
@@ -1725,6 +1740,9 @@ document.getElementById("app").addEventListener("click", (e) => {
       break;
     case "skip-typing-word":
       skipTypingWord();
+      break;
+    case "toggle-typing-hint":
+      toggleTypingHint();
       break;
   }
 });
