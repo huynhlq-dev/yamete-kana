@@ -134,18 +134,17 @@
       transform: rotateY(180deg);
     }
 
-    /* Ô nhập âm flashcard — ép cứng kích thước bằng CSS thường (không qua class Tailwind JIT),
-       vì element này được chèn động qua innerHTML và trên một số trình duyệt/thiết bị thật đã
-       thấy input bị native styling làm cao bất thường (gấp 2-3 lần), đẩy lệch cả layout bên dưới. */
-    #flashcard-romaji-input {
+    /* Ô nhập kana (flashcard + luyện gõ) — reset native styling bằng CSS thường (không qua class
+       Tailwind JIT), vì các input này được chèn động qua innerHTML và trên một số trình duyệt/
+       thiết bị thật đã thấy bị native styling làm cao bất thường, đẩy lệch layout. Kích thước
+       (padding/font-size) vẫn để class Tailwind trong app.js quyết định — chặn phóng to tự động
+       chính là text-size-adjust:100% đặt ở html,body phía trên. */
+    .kana-text-input {
       box-sizing: border-box;
       -webkit-appearance: none;
       appearance: none;
       display: block;
-      width: 100%;
-      height: 52px;
-      line-height: 1.2;
-      font-size: 18px;
+      line-height: 1.3;
       margin: 0;
     }
 
@@ -362,6 +361,8 @@
     </div>
   </div>
 
+  <!-- Convert romaji <-> kana cho tính năng Luyện Gõ (wanakana.bind trong app.js) -->
+  <script src="https://cdn.jsdelivr.net/npm/wanakana@5.3.1/wanakana.min.js"></script>
   <!-- Dữ liệu bảng chữ cái -->
   <script src="data.js"></script>
   <!-- Ngân hàng đề Test Final -->

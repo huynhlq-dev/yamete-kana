@@ -283,6 +283,14 @@ const state = {
     submitted: false,
     result: null, // chốt lúc nộp bài: { correctCount, total, score, pass, elapsedSec, overtime, wrong }
   },
+
+  typing: {
+    scope: "hiragana", // "hiragana" | "katakana" — chọn ở màn typing-scope trước khi luyện
+    words: [], // danh sách từ (đã xáo trộn) của lượt luyện hiện tại
+    currentIndex: 0,
+    correctCount: 0,
+    skippedCount: 0,
+  },
 };
 
 // ============================================================
@@ -387,9 +395,19 @@ function render() {
     case "exam-result":
       screenHtml = renderExamResult();
       break;
+    case "typing-scope":
+      screenHtml = renderTypingScope();
+      break;
+    case "typing-practice":
+      screenHtml = renderTypingPractice();
+      break;
+    case "typing-complete":
+      screenHtml = renderTypingComplete();
+      break;
   }
   app.innerHTML = screenHtml + renderFooter();
   if (state.screen === "study-flashcard") activateFlashcardFlip();
+  if (state.screen === "typing-practice") activateTypingInput();
   window.scrollTo(0, 0);
 }
 
@@ -447,6 +465,10 @@ function renderHome() {
         <button data-action="go-exam-list"
           class="w-full py-5 rounded-2xl bg-ink text-white text-xl font-semibold shadow-lg active:scale-95 transition">
           🎓 Test Final — Đấu Thật Đấy
+        </button>
+        <button data-action="go-typing-scope"
+          class="w-full py-5 rounded-2xl bg-teal-600 text-white text-xl font-semibold shadow-lg active:scale-95 transition">
+          ⌨️ Luyện Gõ — Tay Nhanh Hơn Não
         </button>
       </div>
 
@@ -637,7 +659,7 @@ function escapeHtml(str) {
 
 // Border/nền ô nhập âm theo kết quả chấm: xanh (đúng), đỏ (sai), vàng (bỏ trống), trung tính (chưa lật)
 function inputFeedbackClasses(feedback) {
-  const base = "w-full py-3 px-4 rounded-2xl text-center text-lg font-medium border-2 transition outline-none";
+  const base = "kana-text-input w-full py-3 px-4 rounded-2xl text-center text-lg font-medium border-2 outline-none transition";
   if (feedback === "correct") return `${base} bg-status-ok/10 text-status-ok border-status-ok`;
   if (feedback === "wrong") return `${base} bg-status-busy/10 text-status-busy border-status-busy`;
   if (feedback === "empty") return `${base} bg-saffron-100 text-saffron-700 border-saffron-500`;
@@ -1449,6 +1471,155 @@ function renderExamResult() {
 }
 
 // ============================================================
+// LUYỆN GÕ TIẾNG NHẬT — gõ romaji, tự convert real-time sang kana bằng wanakana
+// ============================================================
+
+function renderTypingScope() {
+  return `
+    ${renderAppHeader("Chọn Bảng Để Luyện Gõ")}
+    <div class="px-5 pb-8 pt-6 flex-1 flex flex-col justify-center gap-4">
+      <p class="text-center text-ink-soft font-medium mb-2">Gõ romaji, tay phải tự nhớ ra chữ Nhật</p>
+      <button data-action="start-typing" data-scope="hiragana"
+        class="w-full py-6 rounded-2xl bg-teal-700 text-white text-xl font-semibold shadow-lg active:scale-95 transition">
+        あ Hiragana
+      </button>
+      <button data-action="start-typing" data-scope="katakana"
+        class="w-full py-6 rounded-2xl bg-saffron-500 text-ink text-xl font-semibold shadow-lg active:scale-95 transition">
+        ア Katakana
+      </button>
+    </div>
+  `;
+}
+
+function startTypingPractice(scope) {
+  const pool = scope === "hiragana" ? TYPING_WORDS_HIRAGANA : TYPING_WORDS_KATAKANA;
+  state.typing = {
+    scope,
+    words: shuffle(pool),
+    currentIndex: 0,
+    correctCount: 0,
+    skippedCount: 0,
+  };
+  state.screen = "typing-practice";
+  render();
+}
+
+// Chấm bằng plain-mode (không IMEMode) trên giá trị HIỆN TẠI của input — vì wanakana.bind() giữ lại
+// đuôi romaji chưa chốt được (vd "ぱn" chưa tự thành "ぱん" ở chế độ IME), plain-mode xử lý nốt đuôi
+// đó đúng cách mà không cần biết chuỗi romaji gốc đã gõ. Nhờ vậy input vẫn "gõ tới đâu ra chữ tới đó"
+// (nhìn mượt) nhưng lúc chấm điểm luôn đúng dù còn ký tự lửng.
+function checkTypingMatch(inputEl) {
+  const t = state.typing;
+  const target = t.words[t.currentIndex];
+  const resolve = t.scope === "hiragana" ? wanakana.toHiragana : wanakana.toKatakana;
+  const resolved = resolve(inputEl.value);
+  if (resolved !== target) return;
+
+  inputEl.value = resolved;
+  inputEl.disabled = true;
+  t.correctCount++;
+  showToast("correct");
+  setTimeout(advanceTypingWord, 700);
+}
+
+function advanceTypingWord() {
+  const t = state.typing;
+  if (t.currentIndex + 1 >= t.words.length) {
+    state.screen = "typing-complete";
+  } else {
+    t.currentIndex++;
+  }
+  render();
+}
+
+function skipTypingWord() {
+  state.typing.skippedCount++;
+  advanceTypingWord();
+}
+
+function clearTypingInput() {
+  const input = document.getElementById("typing-input");
+  if (!input) return;
+  input.value = "";
+  input.focus();
+}
+
+// Gắn wanakana.bind() (convert live) + listener chấm điểm sau mỗi render() của màn typing-practice —
+// input là phần tử DOM mới toanh mỗi lần render nên không cần unbind cái cũ, nó tự bị dọn theo innerHTML.
+function activateTypingInput() {
+  const input = document.getElementById("typing-input");
+  if (!input) return;
+  const imeMode = state.typing.scope === "hiragana" ? "toHiragana" : "toKatakana";
+  wanakana.bind(input, { IMEMode: imeMode });
+  input.addEventListener("input", () => checkTypingMatch(input));
+  input.focus();
+}
+
+function renderTypingPractice() {
+  const t = state.typing;
+  const target = t.words[t.currentIndex];
+  const total = t.words.length;
+  const scopeLabel = t.scope === "hiragana" ? "Hiragana" : "Katakana";
+
+  return `
+    ${renderAppHeader(`Luyện Gõ — ${scopeLabel}`, "go-typing-scope")}
+    <div class="px-5 pb-8 pt-6 flex-1">
+      <p class="text-center text-sm text-ink-faint font-medium mb-6">Từ ${t.currentIndex + 1}/${total}</p>
+
+      <div class="w-full py-10 rounded-3xl bg-white shadow-xl flex items-center justify-center mb-6">
+        <p class="text-5xl font-semibold text-ink tracking-wide">${target}</p>
+      </div>
+
+      <input id="typing-input" type="text" placeholder="Gõ romaji vào đây…"
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+        class="kana-text-input w-full py-4 px-4 rounded-2xl text-center text-2xl font-medium border-2 border-transparent bg-white shadow outline-none focus:border-teal-700 transition mb-2" />
+      ${t.scope === "katakana"
+      ? `<p class="text-center text-xs text-ink-faint mb-4">💡 Trường âm gõ dấu "-" nhé (vd: ke-ki → ケーキ)</p>`
+      : `<div class="mb-4"></div>`
+    }
+
+      <div class="grid grid-cols-2 gap-3">
+        <button data-action="clear-typing-input"
+          class="py-3 rounded-2xl bg-cream-border text-ink-soft font-semibold transition active:scale-95">
+          🧹 Xoá
+        </button>
+        <button data-action="skip-typing-word"
+          class="py-3 rounded-2xl bg-cream-border text-ink-soft font-semibold transition active:scale-95">
+          ⏭️ Bỏ qua
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function renderTypingComplete() {
+  const t = state.typing;
+  const skippedNote = t.skippedCount ? `, bỏ qua ${t.skippedCount} từ (lười)` : "";
+
+  return `
+    ${renderAppHeader()}
+    <div class="flex flex-col items-center justify-center flex-1 px-6 text-center">
+      <div class="text-6xl mb-4">⌨️</div>
+      <h2 class="text-2xl font-bold text-ink mb-2">Gõ Xong Rồi Đấy À?</h2>
+      <p class="text-ink-soft mb-8">Đúng ${t.correctCount}/${t.words.length} từ${skippedNote}.</p>
+      <div class="w-full flex flex-col gap-4 max-w-xs">
+        <button data-action="start-typing" data-scope="${t.scope}"
+          class="w-full py-4 rounded-2xl bg-teal-700 text-white text-lg font-semibold shadow active:scale-95 transition">
+          🔄 Luyện Lại
+        </button>
+        <button data-action="go-typing-scope"
+          class="w-full py-4 rounded-2xl bg-saffron-500 text-ink text-lg font-semibold shadow active:scale-95 transition">
+          🔁 Đổi Bảng Chữ
+        </button>
+        <button data-action="go-home" class="w-full py-3 text-ink-faint font-medium">
+          Trốn Về Nhà
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+// ============================================================
 // EVENT DELEGATION — xử lý toàn bộ tương tác click / change
 // ============================================================
 document.getElementById("app").addEventListener("click", (e) => {
@@ -1540,6 +1711,19 @@ document.getElementById("app").addEventListener("click", (e) => {
       break;
     case "retry-exam":
       retryExam();
+      break;
+    case "go-typing-scope":
+      state.screen = "typing-scope";
+      render();
+      break;
+    case "start-typing":
+      startTypingPractice(target.dataset.scope);
+      break;
+    case "clear-typing-input":
+      clearTypingInput();
+      break;
+    case "skip-typing-word":
+      skipTypingWord();
       break;
   }
 });

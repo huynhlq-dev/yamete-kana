@@ -9,6 +9,7 @@ index.html   Khung giao diện, nạp Tailwind CDN + font, chứa <div id="app">
 data.js       46 chữ Hiragana + 46 chữ Katakana (char, romaji, type, group, strokeLevel, lookalike)
               + HIRAGANA_YOON/KATAKANA_YOON: 33 âm ghép (Yōon) mỗi bảng, tách riêng khỏi 46 chữ gốc
               + LESSONS: cấu trúc 20 bài học cố định
+              + TYPING_WORDS_HIRAGANA/TYPING_WORDS_KATAKANA: ngân hàng từ cho "Luyện Gõ"
 examData.js   EXAM_TESTS: 4 đề "Test Final" cố định (sinh từ Tests.JSON), mỗi câu có
               question_text/options/answer + breakdown (tách âm kana, chỉ hiện ở màn xem câu sai)
 Tests.JSON    Nguồn gốc của examData.js — sửa tay khi cần, rồi chạy lại script sinh examData.js
@@ -62,6 +63,13 @@ Không cần cài đặt hay build gì cả:
     khi bấm "Nộp Bài" mới chấm. Kết quả: điểm/100, ĐẠT (≥80) hay KHÔNG ĐẠT, thời gian làm bài (báo rõ nếu
     quá giờ), và danh sách câu sai kèm bảng tách âm (kana ↔ romaji) để ôn lại.
   - Kết quả **gần nhất** mỗi đề được lưu lại, hiện thành badge ở màn chọn đề.
+- **Luyện Gõ**: chọn Hiragana hoặc Katakana → gõ romaji vào 1 ô input, tự convert real-time sang kana
+  đúng bảng đã chọn bằng thư viện [wanakana](https://github.com/WaniKani/WanaKana) (nạp qua CDN, không
+  cần npm/build step). Khớp đủ cả từ (kể cả dakuten/handakuten/yōon/sokuon/trường âm) thì tự chuyển từ
+  tiếp theo; có nút Xoá và Bỏ qua. Từ vựng lấy từ `TYPING_WORDS_HIRAGANA`/`TYPING_WORDS_KATAKANA` trong
+  `data.js` — cố tình tránh mọi từ có ん đứng ngay trước hàng な/や/わ (vd こんにちは) vì đó là edge case
+  wanakana convert sai lúc gõ real-time; trường âm katakana (ー) phải gõ dấu `-` (vd `ke-ki` → ケーキ),
+  UI có gợi ý sẵn khi chọn Katakana.
 
 ## Lưu trữ
 

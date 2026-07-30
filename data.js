@@ -301,3 +301,39 @@ const STROKE_LESSONS_UNLOCK_COUNT = 5;
 
 // Số bài (trong 10 bài 1–10) cần hoàn thành trước khi mở khóa bài 15–20 (Yōon)
 const YOON_LESSONS_UNLOCK_COUNT = 8;
+
+/**
+ * TYPING_WORDS_HIRAGANA / TYPING_WORDS_KATAKANA — ngân hàng từ cho tính năng "Luyện gõ tiếng Nhật".
+ * Chỉ là chuỗi kana (không cần romaji đi kèm — wanakana tự so khớp 2 chiều lúc chấm điểm).
+ *
+ * Cố tình TRÁNH mọi từ có ん đứng ngay trước hàng な/や/わ (vd こんにちは, でんわ, ほんや) — đây là
+ * pattern wanakana convert SAI lúc gõ realtime (đã kiểm chứng: "konnichiha" ra "こんいちは" thay vì
+ * "こんにちは", kể cả gõ từng ký tự một qua wanakana.bind()). Mọi pattern khác (ん cuối từ, ん trước
+ * hàng không phải な/や/わ, sokuon っ, dakuten/handakuten, yōon, trường âm katakana qua dấu "-") đã
+ * test kỹ và chạy đúng.
+ */
+const TYPING_WORDS_HIRAGANA = [
+  "ありがとう", // arigatou
+  "おはよう", // ohayou
+  "さようなら", // sayounara
+  "すみません", // sumimasen
+  "がっこう", // gakkou
+  "べんきょう", // benkyou
+  "しゃしん", // shashin
+  "ぎゅうにゅう", // gyuunyuu
+  "きって", // kitte
+  "せんせい", // sensei
+];
+
+const TYPING_WORDS_KATAKANA = [
+  "テレビ", // terebi
+  "カメラ", // kamera
+  "ジュース", // juusu
+  "サッカー", // sakka-
+  "ホテル", // hoteru
+  "タクシー", // takushi-
+  "ピザ", // piza
+  "コンピューター", // konpyu-ta-
+  "ケーキ", // ke-ki
+  "ノート", // no-to
+];
