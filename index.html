@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#1C564C" />
+  <meta name="theme-color" content="#0ABAB5" />
   <title>YAMATE Kana — Vào Học Đi Đồ Lười 🔥</title>
 
   <meta name="description"
@@ -28,27 +28,31 @@
   <!-- Tailwind CSS (CDN, biên dịch JIT ngay trên trình duyệt) -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Font UI (Plus Jakarta Sans) + font hỗ trợ tiếng Nhật rõ nét (Noto Sans JP) -->
+  <!-- Font UI (Inter, theo design system) + font hỗ trợ tiếng Nhật rõ nét (Noto Sans JP) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap"
     rel="stylesheet" />
 
-  <!-- Mở rộng bảng màu Tailwind theo design system tham khảo (teal / saffron / cream / ink) -->
+  <!-- Bảng màu theo "YAMATE Kana Design System v1.0" (teal sáng + pastel sakura/yuzu) — vẫn giữ
+       nguyên TÊN key (teal/saffron/cream/ink/status) như cũ nên app.js không cần sửa gì, chỉ đổi
+       giá trị hex bên dưới là toàn bộ app đổi màu. teal-700 neo vào đúng màu chủ đạo #0ABAB5 của
+       design system (thay vì theo đúng số thứ tự 700 trong file gốc) vì đó là màu nút/CTA chính
+       đang dùng khắp app (27 chỗ), không phải màu 700 tối nhất của họ. -->
   <script>
     tailwind.config = {
       theme: {
         extend: {
           colors: {
-            teal: { 50: '#F1F7F5', 100: '#E3EFEC', 200: '#BFDAD4', 300: '#86B8AF', 400: '#4E9488', 500: '#2F7A6E', 600: '#22635A', 700: '#1C564C', 800: '#1A4E47', 900: '#143F39' },
-            saffron: { 100: '#FEF7E3', 200: '#FDEFC7', 300: '#FCE4A0', 400: '#FBD97E', 500: '#F6C445', 600: '#EDB428', 700: '#C9971C' },
-            cream: { DEFAULT: '#F4F1E9', surface: '#FBFAF6', border: '#EDE9DD' },
-            ink: { DEFAULT: '#232823', soft: '#6F746D', faint: '#9A9E96' },
-            status: { ok: '#2E7D32', busy: '#C62828' },
+            teal: { 50: '#F0FDFC', 100: '#E6FAF9', 200: '#CFF5F3', 300: '#B2F0EE', 400: '#7FEFEC', 500: '#66E3DF', 600: '#14D4CE', 700: '#0ABAB5', 800: '#099E9A', 900: '#077F7B' },
+            saffron: { 100: '#FEF3C7', 200: '#FDE68A', 300: '#FCD34D', 400: '#FBBF24', 500: '#F59E0B', 600: '#D97706', 700: '#B45309' },
+            cream: { DEFAULT: '#F8FAFB', surface: '#F1F5F9', border: '#E2E8F0' },
+            ink: { DEFAULT: '#1E293B', soft: '#475569', faint: '#94A3B8' },
+            status: { ok: '#16A34A', busy: '#DC2626' },
           },
           fontFamily: {
-            sans: ['"Plus Jakarta Sans"', '"Noto Sans JP"', 'system-ui', '-apple-system', 'sans-serif'],
+            sans: ['"Inter"', '"Noto Sans JP"', 'system-ui', '-apple-system', 'sans-serif'],
           },
           // Thang elevation 3 mức (thay vì dùng shadow/shadow-md/shadow-lg/shadow-xl mặc định của
           // Tailwind lẫn lộn không theo hệ thống nào) — dùng dần cho code mới, không đổi hàng loạt
@@ -188,7 +192,7 @@
       left: 50%;
       width: max-content;
       max-width: min(88vw, 340px);
-      background: #1C564C;
+      background: #0ABAB5;
       color: #fff;
       padding: 12px 20px;
       border-radius: 14px;
@@ -313,7 +317,7 @@
       gap: 8px;
       white-space: nowrap;
       background: #fff;
-      color: #232823;
+      color: #1E293B;
       border: none;
       border-radius: 9999px;
       padding: 11px 18px;
@@ -385,15 +389,15 @@
       justify-content: space-between;
       gap: 12px;
       padding: 16px 18px;
-      border-bottom: 1px solid #EDE9DD;
+      border-bottom: 1px solid #E2E8F0;
       flex-shrink: 0;
-      background: #FBFAF6;
+      background: #F1F5F9;
     }
 
     .feedback-modal-title {
       font-weight: 800;
       font-size: 15px;
-      color: #232823;
+      color: #1E293B;
     }
 
     .feedback-modal-close {
@@ -401,8 +405,8 @@
       height: 34px;
       border-radius: 9999px;
       border: none;
-      background: #EDE9DD;
-      color: #232823;
+      background: #E2E8F0;
+      color: #1E293B;
       font-size: 16px;
       font-weight: 700;
       cursor: pointer;
@@ -414,7 +418,7 @@
     }
 
     .feedback-modal-close:hover {
-      background: #E2DDCE;
+      background: #CBD5E1;
     }
 
     .feedback-modal-close:active {
@@ -424,7 +428,7 @@
     .feedback-modal-body {
       flex: 1;
       overflow: auto;
-      background: #FBFAF6;
+      background: #F1F5F9;
       -webkit-overflow-scrolling: touch;
     }
 
@@ -443,7 +447,7 @@
       flex-direction: column;
       align-items: center;
       gap: 14px;
-      background: #FBFAF6;
+      background: #F1F5F9;
       overflow: auto;
     }
 
@@ -459,14 +463,14 @@
       text-align: center;
       font-size: 14px;
       font-weight: 600;
-      color: #6F746D;
+      color: #475569;
     }
 
     .coffee-download-btn {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      background: #1C564C;
+      background: #0ABAB5;
       color: #fff;
       border-radius: 9999px;
       padding: 12px 22px;

@@ -2,6 +2,13 @@
 
 App học bảng chữ cái tiếng Nhật (Hiragana & Katakana) — HTML + Tailwind CSS (CDN) + Vanilla JavaScript, không framework, không build step.
 
+## Giao diện
+
+Bảng màu + font theo "YAMATE Kana Design System v1.0" (teal sáng `#0ABAB5` làm màu chủ đạo, nền
+`cream` gần trắng, chữ `ink`, font Inter) — khai báo toàn bộ ở `tailwind.config` trong `index.html`
+dưới dạng các key màu cũ (`teal`/`saffron`/`cream`/`ink`/`status`), nên `app.js` chỉ dùng tên class,
+không có mã hex nào cứng trong đó — đổi bảng màu chỉ cần sửa giá trị hex ở `index.html`.
+
 ## Cấu trúc file
 
 ```
