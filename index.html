@@ -50,12 +50,45 @@
           fontFamily: {
             sans: ['"Plus Jakarta Sans"', '"Noto Sans JP"', 'system-ui', '-apple-system', 'sans-serif'],
           },
+          // Thang elevation 3 mức (thay vì dùng shadow/shadow-md/shadow-lg/shadow-xl mặc định của
+          // Tailwind lẫn lộn không theo hệ thống nào) — dùng dần cho code mới, không đổi hàng loạt
+          // chỗ đang dùng shadow mặc định để tránh rủi ro không cần thiết.
+          boxShadow: {
+            e1: '0 1px 3px rgba(0,0,0,0.06)', // nút, phần tử nổi nhẹ
+            e2: '0 4px 12px rgba(0,0,0,0.08)', // card, tile
+            e3: '0 8px 24px rgba(0,0,0,0.12)', // modal, phần tử nổi cao nhất
+          },
         },
       },
     };
   </script>
 
   <style>
+    /* Token thời lượng/easing cho animation — gom về 1 chỗ thay vì mỗi nơi tự hardcode 1 số khác
+       nhau. Micro = tap/hover nhỏ, transition = toast/modal, complex = hiệu ứng nhiều bước (lật thẻ).
+       Bounce dùng cho hiệu ứng "nảy vào" (toast, modal); standard dùng cho tap/hover thường. */
+    :root {
+      --motion-micro: 150ms;
+      --motion-transition: 300ms;
+      --motion-complex: 500ms;
+      --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+      --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* Tôn trọng cài đặt "giảm hiệu ứng chuyển động" của hệ điều hành/trình duyệt — tắt gần hết
+       animation/transition trang trí, giữ lại thay đổi trạng thái (chỉ mất phần "chuyển động"). */
+    @media (prefers-reduced-motion: reduce) {
+
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
     html,
     body {
       overscroll-behavior: none;
@@ -115,7 +148,7 @@
       position: relative;
       width: 100%;
       height: 100%;
-      transition: transform 0.5s cubic-bezier(.4, .15, .2, 1);
+      transition: transform var(--motion-complex) cubic-bezier(.4, .15, .2, 1);
       transform-style: preserve-3d;
     }
 
@@ -166,7 +199,7 @@
       box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
       z-index: 999;
       pointer-events: none;
-      animation: toastIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      animation: toastIn var(--motion-transition) var(--ease-bounce) forwards;
     }
 
     @keyframes toastIn {
@@ -219,7 +252,7 @@
       line-height: 1;
       box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
       cursor: pointer;
-      transition: transform 0.15s ease, background 0.15s ease;
+      transition: transform var(--motion-micro) var(--ease-standard), background var(--motion-micro) var(--ease-standard);
     }
 
     .feedback-fab:hover {
@@ -255,7 +288,7 @@
       flex-direction: column;
       align-items: stretch;
       gap: 8px;
-      animation: feedbackMenuIn 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+      animation: feedbackMenuIn 0.18s var(--ease-bounce);
     }
 
     .feedback-menu.hidden {
@@ -288,7 +321,7 @@
       font-weight: 700;
       box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
       cursor: pointer;
-      transition: transform 0.15s ease;
+      transition: transform var(--motion-micro) var(--ease-standard);
     }
 
     .feedback-menu-item:active {
@@ -343,7 +376,7 @@
       flex-direction: column;
       overflow: hidden;
       box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
-      animation: feedbackScaleIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      animation: feedbackScaleIn 0.25s var(--ease-bounce);
     }
 
     .feedback-modal-header {
@@ -377,7 +410,7 @@
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      transition: transform 0.15s ease, background 0.15s ease;
+      transition: transform var(--motion-micro) var(--ease-standard), background var(--motion-micro) var(--ease-standard);
     }
 
     .feedback-modal-close:hover {
@@ -440,7 +473,7 @@
       font-size: 14px;
       font-weight: 700;
       text-decoration: none;
-      transition: transform 0.15s ease;
+      transition: transform var(--motion-micro) var(--ease-standard);
     }
 
     .coffee-download-btn:active {
