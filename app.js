@@ -195,6 +195,18 @@ function countCompletedRowLessons(scope) {
   return LESSONS.filter((l) => l.kind === "row" && getLessonStatus(scope, l.key) === "completed").length;
 }
 
+// Tổng số bài (trong cả 20 bài) đã hoàn thành — dùng cho màn Thành Tích, không phân biệt kind
+function countCompletedLessons(scope) {
+  return LESSONS.filter((l) => getLessonStatus(scope, l.key) === "completed").length;
+}
+
+// Số chữ đã đánh dấu "Đã nhớ" ở Flashcard, trên tổng 46 chữ gốc — dùng cho dòng tiến độ ở Home
+function countKnownChars(type) {
+  const progress = loadProgress();
+  const pool = type === "hiragana" ? HIRAGANA : KATAKANA;
+  return pool.filter((c) => progress[cardKey(c)] === "known").length;
+}
+
 function isStrokeLessonsUnlocked(scope) {
   return countCompletedRowLessons(scope) >= STROKE_LESSONS_UNLOCK_COUNT;
 }
@@ -404,6 +416,9 @@ function render() {
     case "typing-complete":
       screenHtml = renderTypingComplete();
       break;
+    case "achievements":
+      screenHtml = renderAchievements();
+      break;
   }
   app.innerHTML = screenHtml + renderFooter();
   if (state.screen === "study-flashcard") activateFlashcardFlip();
@@ -415,10 +430,8 @@ function render() {
 // MÀN HOME
 // ============================================================
 function renderHome() {
-  const hs = loadHighscores()[state.scope];
-  const highscoreText = hs
-    ? `Đỉnh cao hiện tại: ${hs.score}/${hs.total} (${Math.round((hs.score / hs.total) * 100)}%) — ngon, đừng ảo`
-    : "Chưa thi lần nào, sợ à?";
+  const knownHira = countKnownChars("hiragana");
+  const knownKata = countKnownChars("katakana");
 
   const scopes = [
     { key: "hiragana", label: "Hiragana" },
@@ -428,14 +441,13 @@ function renderHome() {
 
   return `
     ${renderAppHeader()}
-    <div class="flex flex-col flex-1 px-5 pt-12 pb-8">
-      <div class="text-center mb-10">
-        <div class="text-5xl mb-3">🇯🇵</div>
-        <p class="text-ink font-bold italic">"Học nhiều ngu nhiều, học ít ngu ít, không học không ngu"</p>
-        <p class="text-ink-soft mt-2 text-sm">Học đi đồ lười, để lâu não mốc</p>
+    <div class="flex flex-col flex-1 px-5 pt-8 pb-8">
+      <div class="text-center mb-5">
+        <div class="text-4xl mb-2">🇯🇵</div>
+        <p class="text-ink font-bold italic text-sm">"Học nhiều ngu nhiều, học ít ngu ít, không học không ngu"</p>
       </div>
 
-      <div class="bg-white rounded-2xl shadow-md p-4 mb-8">
+      <div class="bg-white rounded-2xl shadow-md p-4 mb-3">
         <p class="text-sm font-medium text-ink-soft mb-3">Chọn bảng chữ, lẹ lên!</p>
         <div class="grid grid-cols-3 gap-3">
           ${scopes
@@ -453,18 +465,15 @@ function renderHome() {
         </div>
       </div>
 
-      <div class="flex flex-col gap-5 mt-4">
+      <p class="text-center text-xs font-semibold text-ink-faint mb-6">
+        あ Hiragana ${knownHira}/46 · ア Katakana ${knownKata}/46
+      </p>
+
+      <h2 class="text-xs font-semibold text-ink-faint uppercase tracking-wide mb-3">Học</h2>
+      <div class="flex flex-col gap-3 mb-6">
         <button data-action="go-study"
           class="w-full py-5 rounded-2xl bg-teal-700 text-white text-xl font-semibold shadow-lg active:scale-95 transition">
-          📖 Vào học đi đồ lười
-        </button>
-        <button data-action="go-quiz"
-          class="w-full py-5 rounded-2xl bg-saffron-500 text-ink text-xl font-semibold shadow-lg active:scale-95 transition">
-          📝 Vào chịu tội 20 câu
-        </button>
-        <button data-action="go-exam-list"
-          class="w-full py-5 rounded-2xl bg-ink text-white text-xl font-semibold shadow-lg active:scale-95 transition">
-          🎓 Test Final — Đấu Thật Đấy
+          📖 Học Chữ Cái, Đồ Lười Ơi
         </button>
         <button data-action="go-typing-scope"
           class="w-full py-5 rounded-2xl bg-teal-600 text-white text-xl font-semibold shadow-lg active:scale-95 transition">
@@ -472,10 +481,96 @@ function renderHome() {
         </button>
       </div>
 
-      <div class="mt-8 text-center">
-        <p class="inline-block bg-white/70 rounded-full px-4 py-2 text-sm font-medium text-ink-soft shadow-sm">
-          🏆 ${highscoreText}
-        </p>
+      <h2 class="text-xs font-semibold text-ink-faint uppercase tracking-wide mb-3">Kiểm Tra</h2>
+      <div class="grid grid-cols-2 gap-3 mb-3">
+        <button data-action="go-quiz"
+          class="py-4 rounded-2xl bg-saffron-500 text-ink text-sm font-semibold shadow active:scale-95 transition">
+          📝 Luyện 20 Câu, Chịu Tội Đi
+        </button>
+        <button data-action="go-exam-list"
+          class="py-4 rounded-2xl bg-ink text-white text-sm font-semibold shadow active:scale-95 transition">
+          🎓 Test Final — Đấu Thật Đấy
+        </button>
+      </div>
+      <button data-action="go-achievements"
+        class="w-full py-3 rounded-2xl bg-white text-ink-soft text-sm font-semibold shadow active:scale-95 transition">
+        🏆 Xem Thành Tích (Dám Không?)
+      </button>
+    </div>
+  `;
+}
+
+// ============================================================
+// MÀN THÀNH TÍCH — tổng hợp tiến độ (flashcard, bài học, thi, Test Final)
+// ============================================================
+function renderAchievements() {
+  const knownHira = countKnownChars("hiragana");
+  const knownKata = countKnownChars("katakana");
+  const hs = loadHighscores();
+  const examResults = loadExamResults();
+  const scopeKeys = ["hiragana", "katakana", "both"];
+
+  const progressBar = (label, done, total) => `
+    <div class="mb-3 last:mb-0">
+      <div class="flex justify-between text-sm font-medium text-ink mb-1">
+        <span>${label}</span><span>${done}/${total}</span>
+      </div>
+      <div class="h-2 bg-cream-border rounded-full overflow-hidden">
+        <div class="h-full bg-teal-700" style="width:${total ? Math.round((done / total) * 100) : 0}%"></div>
+      </div>
+    </div>`;
+
+  const rowLine = (label, valueHtml) => `
+    <div class="flex justify-between items-center text-sm font-medium text-ink py-1.5 border-b border-cream-border last:border-0">
+      <span>${label}</span>${valueHtml}
+    </div>`;
+
+  const lessonRows = scopeKeys
+    .map((s) => rowLine(scopeLabel(s), `<span>${countCompletedLessons(s)}/20</span>`))
+    .join("");
+
+  const quizRows = scopeKeys
+    .map((s) => {
+      const r = hs[s];
+      return rowLine(
+        scopeLabel(s),
+        r
+          ? `<span class="text-teal-700">${r.score}/${r.total}</span>`
+          : `<span class="text-ink-faint">Chưa thi</span>`
+      );
+    })
+    .join("");
+
+  const examRows = EXAM_TESTS.map((t) => {
+    const r = examResults[t.id];
+    const valueHtml = r
+      ? `<span class="${r.pass ? "text-status-ok" : "text-status-busy"}">${r.score}đ (${r.pass ? "ĐẠT" : "KHÔNG ĐẠT"})</span>`
+      : `<span class="text-ink-faint">Chưa thi</span>`;
+    return rowLine(`<span class="truncate mr-2 inline-block max-w-[160px] align-bottom">${t.title}</span>`, valueHtml);
+  }).join("");
+
+  return `
+    ${renderAppHeader("Thành Tích Của Mày")}
+    <div class="px-5 pb-8 pt-6 flex-1">
+      <div class="bg-white rounded-2xl shadow p-4 mb-4">
+        <p class="text-xs font-semibold text-ink-faint uppercase tracking-wide mb-3">Chữ Đã Nhớ (Flashcard)</p>
+        ${progressBar("あ Hiragana", knownHira, 46)}
+        ${progressBar("ア Katakana", knownKata, 46)}
+      </div>
+
+      <div class="bg-white rounded-2xl shadow p-4 mb-4">
+        <p class="text-xs font-semibold text-ink-faint uppercase tracking-wide mb-3">Bài Học Hoàn Thành (/20)</p>
+        ${lessonRows}
+      </div>
+
+      <div class="bg-white rounded-2xl shadow p-4 mb-4">
+        <p class="text-xs font-semibold text-ink-faint uppercase tracking-wide mb-3">Điểm Cao "Luyện 20 Câu"</p>
+        ${quizRows}
+      </div>
+
+      <div class="bg-white rounded-2xl shadow p-4">
+        <p class="text-xs font-semibold text-ink-faint uppercase tracking-wide mb-3">Test Final</p>
+        ${examRows}
       </div>
     </div>
   `;
@@ -1755,6 +1850,10 @@ document.getElementById("app").addEventListener("click", (e) => {
       break;
     case "toggle-typing-hint":
       toggleTypingHint();
+      break;
+    case "go-achievements":
+      state.screen = "achievements";
+      render();
       break;
   }
 });

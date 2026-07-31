@@ -37,7 +37,13 @@ Không cần cài đặt hay build gì cả:
 
 ## Luồng sử dụng
 
-- **Trang chủ**: chọn Hiragana / Katakana / Cả hai → "Học" hoặc "Thi 20 câu".
+- **Trang chủ**: chọn bảng chữ (Hiragana/Katakana/Cả hai) → dòng tiến độ nhanh (số chữ đã đánh dấu
+  "Đã nhớ" ở Flashcard, /46 mỗi bảng) → nhóm **Học** (2 nút to: Học chữ cái, Luyện Gõ) → nhóm
+  **Kiểm tra** (nút nhỏ hơn: Luyện 20 câu, Test Final, Xem Thành Tích). Sắp xếp theo đúng luồng học
+  thật (học trước, tự kiểm tra sau), nhóm Học nổi bật hơn vì đó là việc nên làm đầu tiên.
+- **Thành Tích**: màn tổng hợp riêng (từ nút 🏆 ở Home) — % chữ đã nhớ mỗi bảng, số bài học hoàn
+  thành /20 mỗi phạm vi, điểm cao "Luyện 20 câu" mỗi phạm vi, và kết quả gần nhất từng đề Test
+  Final. Không lưu dữ liệu mới, chỉ đọc lại các key localStorage đã có sẵn.
 - **Chọn bài học**: 20 bài, chia 3 nhóm:
   - **Học theo hàng** (bài 1–10): mỗi bài dạy 1 nhóm phụ âm mới (Nguyên âm, K, S, T, N, H, M, Y, R, W+N).
   - **Luyện nét & hình dạng** (bài 11–14): chỉ ôn lại chữ **đã học** ở 10 bài trên, nhóm theo độ phức tạp nét vẽ
