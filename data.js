@@ -304,37 +304,176 @@ const YOON_LESSONS_UNLOCK_COUNT = 8;
 
 /**
  * TYPING_WORDS_HIRAGANA / TYPING_WORDS_KATAKANA — ngân hàng từ cho tính năng "Luyện gõ tiếng Nhật".
- * Mỗi phần tử: { kana, vi } — kana để so khớp lúc gõ (wanakana tự so khớp 2 chiều lúc chấm điểm),
- * vi là nghĩa tiếng Việt hiện song song bên dưới chữ Nhật.
+ * Mỗi phần tử: { kana, vi, hint? }
+ *   - kana: để so khớp lúc gõ (wanakana tự so khớp 2 chiều lúc chấm điểm)
+ *   - vi:   nghĩa tiếng Việt hiện song song bên dưới chữ Nhật
+ *   - hint: override chip gợi ý romaji khi cần — mặc định chip dùng wanakana.toRomaji(kana), đúng
+ *           cho hầu hết mọi trường hợp, NGOẠI TRỪ vài chữ dùng tổ hợp mở rộng (vd ファ/フォ) mà
+ *           toRomaji() tách rời thành từng ký tự gốc (vd ソファ -> "sofua") thay vì dạng gõ tự
+ *           nhiên thật sự tạo ra chữ đó ("sofa") — 2 từ này set hint thủ công để chip không gây
+ *           hiểu lầm. Riêng trường âm katakana (ー), chip tự động thay cặp nguyên âm đúp mà
+ *           toRomaji() trả về (vd "juusu") bằng dấu "-" ("ju-su") ở app.js, không cần set hint tay.
  *
- * Cố tình TRÁNH mọi từ có ん đứng ngay trước hàng な/や/わ (vd こんにちは, でんわ, ほんや) — đây là
- * pattern wanakana convert SAI lúc gõ realtime (đã kiểm chứng: "konnichiha" ra "こんいちは" thay vì
- * "こんにちは", kể cả gõ từng ký tự một qua wanakana.bind()). Mọi pattern khác (ん cuối từ, ん trước
- * hàng không phải な/や/わ, sokuon っ, dakuten/handakuten, yōon, trường âm katakana qua dấu "-") đã
- * test kỹ và chạy đúng.
+ * Danh sách này phủ ĐỦ 100% cả 46 chữ cơ bản lẫn 33 âm ghép Yōon của mỗi bảng — verify bằng script,
+ * không phải áng chừng. Vài âm ghép gần như không xuất hiện trong từ vựng thật (ぴゃ/ぴゅ/みゅ ở
+ * hiragana; キョ/ヒャ/ミョ/リャ/リョ/ビャ/ビョ/ピャ ở katakana) nên dùng entry "luyện âm" riêng thay vì
+ * gán ép vào 1 từ không tồn tại.
+ *
+ * Cố tình TRÁNH mọi từ có ん đứng ngay trước hàng な/や/わ (vd こんにちは, でんわ, ほんや) khi gõ
+ * KHÔNG có dấu nháy đơn — đây là pattern wanakana convert SAI lúc gõ realtime nếu gõ liền
+ * ("konnichiha" ra "こんいちは" thay vì "こんにちは"). Đã xác nhận thêm dấu ` ' ` trước âm gây nhầm
+ * (vd "kon'nichiha", "hon'ya", "den'wa") sửa được lỗi này, nhưng KHÔNG dùng trong danh sách hiện tại
+ * vì không cần tới (đã đủ 100% coverage bằng các từ khác) và tránh việc học thêm 1 quy tắc gõ nữa.
+ * Mọi pattern khác (ん cuối từ, ん trước hàng không phải な/や/わ, sokuon っ, dakuten/handakuten,
+ * yōon, trường âm katakana qua dấu "-") đã test kỹ bằng cách gõ từng ký tự thật qua wanakana.bind()
+ * và chạy đúng.
  */
 const TYPING_WORDS_HIRAGANA = [
-  { kana: "ありがとう", vi: "Cảm ơn" }, // arigatou
-  { kana: "おはよう", vi: "Chào buổi sáng" }, // ohayou
-  { kana: "さようなら", vi: "Tạm biệt" }, // sayounara
-  { kana: "すみません", vi: "Xin lỗi" }, // sumimasen
-  { kana: "がっこう", vi: "Trường học" }, // gakkou
-  { kana: "べんきょう", vi: "Việc học" }, // benkyou
-  { kana: "しゃしん", vi: "Ảnh chụp" }, // shashin
-  { kana: "ぎゅうにゅう", vi: "Sữa bò" }, // gyuunyuu
-  { kana: "きって", vi: "Tem thư" }, // kitte
-  { kana: "せんせい", vi: "Giáo viên" }, // sensei
+  { kana: "あさ", vi: "Buổi sáng" },
+  { kana: "いぬ", vi: "Con chó" },
+  { kana: "うみ", vi: "Biển" },
+  { kana: "えき", vi: "Nhà ga" },
+  { kana: "おかし", vi: "Bánh kẹo" },
+  { kana: "くつ", vi: "Giày" },
+  { kana: "けしごむ", vi: "Cục tẩy" },
+  { kana: "こおり", vi: "Nước đá" },
+  { kana: "さかな", vi: "Con cá" },
+  { kana: "しお", vi: "Muối" },
+  { kana: "すいか", vi: "Dưa hấu" },
+  { kana: "せかい", vi: "Thế giới" },
+  { kana: "そら", vi: "Bầu trời" },
+  { kana: "たまご", vi: "Trứng" },
+  { kana: "ちず", vi: "Bản đồ" },
+  { kana: "つき", vi: "Mặt trăng" },
+  { kana: "てがみ", vi: "Lá thư" },
+  { kana: "とけい", vi: "Đồng hồ" },
+  { kana: "なつ", vi: "Mùa hè" },
+  { kana: "にわ", vi: "Sân vườn" },
+  { kana: "ぬの", vi: "Vải" },
+  { kana: "ねこ", vi: "Con mèo" },
+  { kana: "のみもの", vi: "Đồ uống" },
+  { kana: "はな", vi: "Hoa" },
+  { kana: "ひこうき", vi: "Máy bay" },
+  { kana: "ふゆ", vi: "Mùa đông" },
+  { kana: "へや", vi: "Căn phòng" },
+  { kana: "ほし", vi: "Ngôi sao" },
+  { kana: "まど", vi: "Cửa sổ" },
+  { kana: "みず", vi: "Nước" },
+  { kana: "むし", vi: "Côn trùng" },
+  { kana: "めがね", vi: "Kính mắt" },
+  { kana: "もも", vi: "Quả đào" },
+  { kana: "やま", vi: "Núi" },
+  { kana: "ゆき", vi: "Tuyết" },
+  { kana: "よる", vi: "Ban đêm" },
+  { kana: "らいねん", vi: "Năm sau" },
+  { kana: "りんご", vi: "Táo" },
+  { kana: "るす", vi: "Vắng nhà" },
+  { kana: "れきし", vi: "Lịch sử" },
+  { kana: "ろうか", vi: "Hành lang" },
+  { kana: "わたし", vi: "Tôi" },
+  { kana: "ほん", vi: "Sách" },
+  { kana: "みずをのむ", vi: "Uống nước" },
+  { kana: "きゃく", vi: "Khách" },
+  { kana: "きゅうり", vi: "Dưa chuột" },
+  { kana: "きょう", vi: "Hôm nay" },
+  { kana: "ぎゃく", vi: "Ngược lại" },
+  { kana: "ぎゅうにゅう", vi: "Sữa bò" },
+  { kana: "ぎょうざ", vi: "Bánh xếp" },
+  { kana: "かいしゃ", vi: "Công ty" },
+  { kana: "しゅみ", vi: "Sở thích" },
+  { kana: "としょかん", vi: "Thư viện" },
+  { kana: "じゃがいも", vi: "Khoai tây" },
+  { kana: "じゅぎょう", vi: "Tiết học" },
+  { kana: "じょうず", vi: "Giỏi, khéo" },
+  { kana: "おちゃ", vi: "Trà" },
+  { kana: "ちゅうい", vi: "Chú ý" },
+  { kana: "ちょきん", vi: "Tiền tiết kiệm" },
+  { kana: "にゃんこ", vi: "Mèo con" },
+  { kana: "にゅうがく", vi: "Nhập học" },
+  { kana: "にょろにょろ", vi: "Ngoằn ngoèo" },
+  { kana: "ひゃく", vi: "Một trăm" },
+  { kana: "ひゅうひゅう", vi: "Vi vu (gió)" },
+  { kana: "ひょう", vi: "Con báo" },
+  { kana: "さんびゃく", vi: "Ba trăm" },
+  { kana: "びゅうびゅう", vi: "Vù vù (gió)" },
+  { kana: "びょういん", vi: "Bệnh viện" },
+  { kana: "みょうじ", vi: "Họ (tên)" },
+  { kana: "みゃく", vi: "Mạch đập" },
+  { kana: "りゃく", vi: "Viết tắt" },
+  { kana: "りゅう", vi: "Con rồng" },
+  { kana: "りょこう", vi: "Du lịch" },
+  { kana: "ぴゃ", vi: "(âm ghép luyện đọc)" },
+  { kana: "ぴゅ", vi: "(âm ghép luyện đọc)" },
+  { kana: "みゅ", vi: "(âm ghép luyện đọc)" },
+  { kana: "ぴょんぴょん", vi: "Nhảy tưng tưng" },
 ];
 
 const TYPING_WORDS_KATAKANA = [
-  { kana: "テレビ", vi: "Tivi" }, // terebi
-  { kana: "カメラ", vi: "Máy ảnh" }, // kamera
-  { kana: "ジュース", vi: "Nước ép" }, // juusu
-  { kana: "サッカー", vi: "Bóng đá" }, // sakka-
-  { kana: "ホテル", vi: "Khách sạn" }, // hoteru
-  { kana: "タクシー", vi: "Taxi" }, // takushi-
-  { kana: "ピザ", vi: "Pizza" }, // piza
-  { kana: "コンピューター", vi: "Máy tính" }, // konpyu-ta-
-  { kana: "ケーキ", vi: "Bánh kem" }, // ke-ki
-  { kana: "ノート", vi: "Vở, sổ tay" }, // no-to
+  { kana: "テレビ", vi: "Tivi" },
+  { kana: "カメラ", vi: "Máy ảnh" },
+  { kana: "ジュース", vi: "Nước ép" },
+  { kana: "サッカー", vi: "Bóng đá" },
+  { kana: "ホテル", vi: "Khách sạn" },
+  { kana: "タクシー", vi: "Taxi" },
+  { kana: "ピザ", vi: "Pizza" },
+  { kana: "コンピューター", vi: "Máy tính" },
+  { kana: "ケーキ", vi: "Bánh kem" },
+  { kana: "ノート", vi: "Vở, sổ tay" },
+  { kana: "アイス", vi: "Kem lạnh" },
+  { kana: "ウール", vi: "Len" },
+  { kana: "エレベーター", vi: "Thang máy" },
+  { kana: "オレンジ", vi: "Cam" },
+  { kana: "セーター", vi: "Áo len" },
+  { kana: "ソファ", vi: "Ghế sofa", hint: "sofa" },
+  { kana: "チーズ", vi: "Phô mai" },
+  { kana: "ツナ", vi: "Cá ngừ" },
+  { kana: "ニンジン", vi: "Cà rốt" },
+  { kana: "カヌー", vi: "Xuồng ca-nô" },
+  { kana: "ネクタイ", vi: "Cà vạt" },
+  { kana: "ハンバーガー", vi: "Hamburger" },
+  { kana: "ヒーター", vi: "Máy sưởi" },
+  { kana: "フォーク", vi: "Cái nĩa", hint: "fo-ku" },
+  { kana: "ヘリコプター", vi: "Trực thăng" },
+  { kana: "マスク", vi: "Khẩu trang" },
+  { kana: "ミルク", vi: "Sữa" },
+  { kana: "ムービー", vi: "Phim" },
+  { kana: "モデル", vi: "Người mẫu" },
+  { kana: "タイヤ", vi: "Lốp xe" },
+  { kana: "ユーモア", vi: "Sự hài hước" },
+  { kana: "ヨガ", vi: "Yoga" },
+  { kana: "リボン", vi: "Ruy băng" },
+  { kana: "ロボット", vi: "Robot" },
+  { kana: "ワイン", vi: "Rượu vang" },
+  { kana: "ヲ", vi: "(âm luyện đọc)" },
+  { kana: "キャベツ", vi: "Bắp cải" },
+  { kana: "レスキュー", vi: "Cứu hộ" },
+  { kana: "キョ", vi: "(âm ghép luyện đọc)" },
+  { kana: "ギャグ", vi: "Trò đùa" },
+  { kana: "レギュラー", vi: "Cỡ thường" },
+  { kana: "ギョーザ", vi: "Bánh xếp" },
+  { kana: "シャツ", vi: "Áo sơ mi" },
+  { kana: "シュークリーム", vi: "Bánh su kem" },
+  { kana: "ショック", vi: "Cú sốc" },
+  { kana: "ジャム", vi: "Mứt" },
+  { kana: "ジョギング", vi: "Chạy bộ" },
+  { kana: "チャンス", vi: "Cơ hội" },
+  { kana: "チューリップ", vi: "Hoa tulip" },
+  { kana: "チョコレート", vi: "Sô-cô-la" },
+  { kana: "ニャー", vi: "Tiếng mèo kêu" },
+  { kana: "ニュース", vi: "Tin tức" },
+  { kana: "ニョッキ", vi: "Mì Ý nyokki" },
+  { kana: "ヒャ", vi: "(âm ghép luyện đọc)" },
+  { kana: "ヒューズ", vi: "Cầu chì" },
+  { kana: "ヒョウ", vi: "Con báo" },
+  { kana: "ピャ", vi: "(âm ghép luyện đọc)" },
+  { kana: "ピョンヤン", vi: "Bình Nhưỡng" },
+  { kana: "ミャンマー", vi: "Myanmar" },
+  { kana: "ミュージック", vi: "Âm nhạc" },
+  { kana: "ミョ", vi: "(âm ghép luyện đọc)" },
+  { kana: "リャ", vi: "(âm ghép luyện đọc)" },
+  { kana: "リュック", vi: "Ba lô" },
+  { kana: "リョ", vi: "(âm ghép luyện đọc)" },
+  { kana: "ビャ", vi: "(âm ghép luyện đọc)" },
+  { kana: "レビュー", vi: "Đánh giá" },
+  { kana: "ビョ", vi: "(âm ghép luyện đọc)" },
 ];

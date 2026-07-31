@@ -1563,12 +1563,23 @@ function activateTypingInput() {
   input.focus();
 }
 
+// Romaji hiện trong chip gợi ý. wanakana.toRomaji() đúng cho hầu hết trường hợp, NGOẠI TRỪ:
+//  - Trường âm katakana (ー): toRomaji trả về nguyên âm đúp (vd "juusu") nhưng cách gõ thật cần
+//    dấu "-" (vd "ju-su") — tự thay thế ở đây để chip không dạy sai cách gõ.
+//  - Vài chữ dùng tổ hợp mở rộng (ファ/フォ...): toRomaji tách rời thành ký tự gốc (vd "sofua")
+//    thay vì dạng gõ tự nhiên ("sofa") — dùng field `hint` set sẵn trong data.js để override.
+function typingHintRomaji(target, scope) {
+  if (target.hint) return target.hint;
+  const romaji = wanakana.toRomaji(target.kana);
+  return scope === "katakana" ? romaji.replace(/([aiueo])\1/g, "$1-") : romaji;
+}
+
 function renderTypingPractice() {
   const t = state.typing;
   const target = t.words[t.currentIndex];
   const total = t.words.length;
   const scopeLabel = t.scope === "hiragana" ? "Hiragana" : "Katakana";
-  const romaji = wanakana.toRomaji(target.kana);
+  const romaji = typingHintRomaji(target, t.scope);
 
   return `
     ${renderAppHeader(`Luyện Gõ — ${scopeLabel}`, "go-typing-scope")}

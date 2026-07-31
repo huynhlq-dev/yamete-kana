@@ -66,10 +66,19 @@ Không cần cài đặt hay build gì cả:
 - **Luyện Gõ**: chọn Hiragana hoặc Katakana → gõ romaji vào 1 ô input, tự convert real-time sang kana
   đúng bảng đã chọn bằng thư viện [wanakana](https://github.com/WaniKani/WanaKana) (nạp qua CDN, không
   cần npm/build step). Khớp đủ cả từ (kể cả dakuten/handakuten/yōon/sokuon/trường âm) thì tự chuyển từ
-  tiếp theo; có nút Xoá và Bỏ qua. Từ vựng lấy từ `TYPING_WORDS_HIRAGANA`/`TYPING_WORDS_KATAKANA` trong
-  `data.js` — cố tình tránh mọi từ có ん đứng ngay trước hàng な/や/わ (vd こんにちは) vì đó là edge case
-  wanakana convert sai lúc gõ real-time; trường âm katakana (ー) phải gõ dấu `-` (vd `ke-ki` → ケーキ),
-  UI có gợi ý sẵn khi chọn Katakana.
+  tiếp theo; có nút Xoá và Bỏ qua, tap vào chữ Nhật hiện chip gợi ý romaji. Từ vựng lấy từ
+  `TYPING_WORDS_HIRAGANA`/`TYPING_WORDS_KATAKANA` trong `data.js` — **77 từ Hiragana + 67 từ Katakana**,
+  đã verify phủ đủ 100% cả 46 chữ cơ bản lẫn 33 âm ghép Yōon mỗi bảng trong 1 lượt luyện (không phải
+  áng chừng — có script kiểm tra độ phủ). Vài âm ghép gần như không có trong từ vựng thật (ぴゃ/ぴゅ/みゅ
+  hiragana; キョ/ヒャ/ミョ/リャ/リョ/ビャ/ビョ/ピャ katakana) nên dùng entry "luyện âm" riêng thay vì gán
+  ép vào từ không tồn tại.
+  - Cố tình tránh mọi từ có ん đứng ngay trước hàng な/や/わ khi gõ liền (vd こんにちは) vì đó là edge
+    case wanakana convert sai lúc gõ real-time (đã xác nhận thêm dấu `'` trước âm gây nhầm — vd
+    `kon'nichiha`, `hon'ya` — sửa được, nhưng không cần dùng vì đã đủ coverage bằng từ khác).
+  - Trường âm katakana (ー) phải gõ dấu `-` (vd `ke-ki` → ケーキ), UI có gợi ý khi chọn Katakana.
+  - Chip gợi ý dùng `wanakana.toRomaji()`, tự sửa nguyên âm đúp thành dấu `-` cho khớp cách gõ thật
+    (vd hiện "ju-su" chứ không phải "juusu" cho ジュース); 2 từ dùng tổ hợp mở rộng (ソファ, フォーク)
+    set sẵn field `hint` để override vì toRomaji tách sai thành ký tự gốc.
 
 ## Lưu trữ
 
