@@ -3,6 +3,26 @@
 
 <head>
   <meta charset="UTF-8" />
+  <!-- Áp dụng dark mode SỚM NHẤT có thể (trước khi trình duyệt kịp vẽ khung sáng mặc định) — đặt
+       ngay đầu <head>, đồng bộ (không async/defer), để tránh hiện tượng "nháy sáng" 1 khoảnh khắc
+       rồi mới chuyển tối. Ưu tiên lựa chọn người dùng đã lưu; nếu chưa từng chọn thì theo đúng
+       cài đặt hệ điều hành/trình duyệt (prefers-color-scheme) và tự cập nhật nếu cài đặt đó đổi. -->
+  <script>
+    (function () {
+      var KEY = "kana_quiz_theme_v1";
+      var media = window.matchMedia("(prefers-color-scheme: dark)");
+      function apply(theme) {
+        document.documentElement.setAttribute("data-theme", theme);
+      }
+      var stored = localStorage.getItem(KEY);
+      apply(stored || (media.matches ? "dark" : "light"));
+      if (!stored) {
+        media.addEventListener("change", function (e) {
+          if (!localStorage.getItem(KEY)) apply(e.matches ? "dark" : "light");
+        });
+      }
+    })();
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#0ABAB5" />
   <title>YAMATE Kana — Vào Học Đi Đồ Lười 🔥</title>
@@ -39,7 +59,13 @@
        nguyên TÊN key (teal/saffron/cream/ink/status) như cũ nên app.js không cần sửa gì, chỉ đổi
        giá trị hex bên dưới là toàn bộ app đổi màu. teal-700 neo vào đúng màu chủ đạo #0ABAB5 của
        design system (thay vì theo đúng số thứ tự 700 trong file gốc) vì đó là màu nút/CTA chính
-       đang dùng khắp app (27 chỗ), không phải màu 700 tối nhất của họ. -->
+       đang dùng khắp app (27 chỗ), không phải màu 700 tối nhất của họ.
+
+       cream/ink/status/white trỏ vào CSS variable (định nghĩa ở thẻ <style> bên dưới, 2 bộ giá trị
+       light/dark) thay vì hex thẳng — nhờ vậy TOÀN BỘ app đổi màu theo dark mode mà không phải sửa
+       app.js (vẫn dùng đúng tên class cũ). Format "rgb(var(--x) / <alpha-value>)" là cú pháp Tailwind
+       yêu cầu để các modifier độ mờ kiểu bg-status-ok/10 vẫn hoạt động với màu CSS variable. teal/
+       saffron giữ hex thẳng, KHÔNG đổi theo theme vì là màu thương hiệu, đủ nổi bật trên cả 2 nền. -->
   <script>
     tailwind.config = {
       theme: {
@@ -47,9 +73,26 @@
           colors: {
             teal: { 50: '#F0FDFC', 100: '#E6FAF9', 200: '#CFF5F3', 300: '#B2F0EE', 400: '#7FEFEC', 500: '#66E3DF', 600: '#14D4CE', 700: '#0ABAB5', 800: '#099E9A', 900: '#077F7B' },
             saffron: { 100: '#FEF3C7', 200: '#FDE68A', 300: '#FCD34D', 400: '#FBBF24', 500: '#F59E0B', 600: '#D97706', 700: '#B45309' },
-            cream: { DEFAULT: '#F8FAFB', surface: '#F1F5F9', border: '#E2E8F0' },
-            ink: { DEFAULT: '#1E293B', soft: '#475569', faint: '#94A3B8' },
-            status: { ok: '#16A34A', busy: '#DC2626' },
+            cream: {
+              DEFAULT: 'rgb(var(--color-bg) / <alpha-value>)',
+              surface: 'rgb(var(--color-bg-alt) / <alpha-value>)',
+              border: 'rgb(var(--color-border) / <alpha-value>)',
+            },
+            ink: {
+              DEFAULT: 'rgb(var(--color-text) / <alpha-value>)',
+              soft: 'rgb(var(--color-text-soft) / <alpha-value>)',
+              faint: 'rgb(var(--color-text-faint) / <alpha-value>)',
+            },
+            status: {
+              ok: 'rgb(var(--color-status-ok) / <alpha-value>)',
+              busy: 'rgb(var(--color-status-busy) / <alpha-value>)',
+            },
+            // Token RIÊNG cho nền card/input (KHÔNG dùng lại tên "white") — vì "white" còn được
+            // dùng cho text-white (chữ trắng đặt trên nút teal-700/status-ok/busy, những màu KHÔNG
+            // đổi theo theme). Nếu trỏ cả "white" vào biến CSS này, dark mode sẽ vô tình đổi luôn
+            // màu chữ trên các nút đó (từng bị bug: nút "Test Final" ở dark mode ra chữ tối trên
+            // nền cũng tối chuyển sáng — do bg-ink và text-white cùng đổi ngược nhau).
+            card: 'rgb(var(--color-surface) / <alpha-value>)',
           },
           fontFamily: {
             sans: ['"Inter"', '"Noto Sans JP"', 'system-ui', '-apple-system', 'sans-serif'],
@@ -68,6 +111,57 @@
   </script>
 
   <style>
+    /* Biến màu nền/chữ cho dark mode — dạng "R G B" (không dấu phẩy) để dùng được với cú pháp
+       rgb(var(--x) / <alpha-value>) ở tailwind.config phía trên. Giá trị light bám theo đúng thang
+       slate của Tailwind (cream/ink vốn đã là slate-50/100/200 và slate-400/600/800); dark đảo
+       ngược theo đúng thang đó (slate-900 → slate-100) cho nhất quán. teal/saffron KHÔNG có ở đây
+       vì giữ nguyên giữa 2 theme (xem comment ở tailwind.config). */
+    :root {
+      --color-bg: 248 250 251;
+      /* #F8FAFB */
+      --color-bg-alt: 241 245 249;
+      /* #F1F5F9 (slate-100) */
+      --color-border: 226 232 240;
+      /* #E2E8F0 (slate-200) */
+      --color-border-hover: 203 213 225;
+      /* #CBD5E1 (slate-300) */
+      --color-text: 30 41 59;
+      /* #1E293B (slate-800) */
+      --color-text-soft: 71 85 105;
+      /* #475569 (slate-600) */
+      --color-text-faint: 148 163 184;
+      /* #94A3B8 (slate-400) */
+      --color-surface: 255 255 255;
+      /* #FFFFFF — nền card/modal/FAB */
+      --color-status-ok: 22 163 74;
+      /* #16A34A (green-600) */
+      --color-status-busy: 220 38 38;
+      /* #DC2626 (red-600) */
+    }
+
+    :root[data-theme="dark"] {
+      --color-bg: 15 23 42;
+      /* #0F172A (slate-900) */
+      --color-bg-alt: 30 41 59;
+      /* #1E293B (slate-800) */
+      --color-border: 51 65 85;
+      /* #334155 (slate-700) */
+      --color-border-hover: 71 85 105;
+      /* #475569 (slate-600) */
+      --color-text: 241 245 249;
+      /* #F1F5F9 (slate-100) */
+      --color-text-soft: 203 213 225;
+      /* #CBD5E1 (slate-300) */
+      --color-text-faint: 148 163 184;
+      /* #94A3B8 (slate-400) — giữ nguyên độ sáng trung bình, đủ tương phản trên nền tối */
+      --color-surface: 30 41 59;
+      /* #1E293B (slate-800) — card "nổi" nhẹ trên nền slate-900 */
+      --color-status-ok: 34 197 94;
+      /* #22C55E (green-500) — sáng hơn 1 bậc so với light, dễ đọc trên nền tối */
+      --color-status-busy: 239 68 68;
+      /* #EF4444 (red-500) */
+    }
+
     /* Token thời lượng/easing cho animation — gom về 1 chỗ thay vì mỗi nơi tự hardcode 1 số khác
        nhau. Micro = tap/hover nhỏ, transition = toast/modal, complex = hiệu ứng nhiều bước (lật thẻ).
        Bounce dùng cho hiệu ứng "nảy vào" (toast, modal); standard dùng cho tap/hover thường. */
@@ -246,7 +340,7 @@
       width: 50px;
       height: 50px;
       border-radius: 9999px;
-      background: #fff;
+      background: rgb(var(--color-surface));
       color: #EC4899;
       border: 2px solid #EC4899;
       display: flex;
@@ -259,9 +353,15 @@
       transition: transform var(--motion-micro) var(--ease-standard), background var(--motion-micro) var(--ease-standard);
     }
 
+    /* #FDF2F8 (hồng rất nhạt) chỉ hợp trên nền sáng — dark mode dùng lớp phủ hồng trong suốt thay
+       vì 1 màu đặc, để không bị chói trên nền tối. */
     .feedback-fab:hover {
       background: #FDF2F8;
       transform: scale(1.06);
+    }
+
+    :root[data-theme="dark"] .feedback-fab:hover {
+      background: rgba(236, 73, 153, 0.18);
     }
 
     .feedback-fab:active {
@@ -316,8 +416,8 @@
       align-items: center;
       gap: 8px;
       white-space: nowrap;
-      background: #fff;
-      color: #1E293B;
+      background: rgb(var(--color-surface));
+      color: rgb(var(--color-text));
       border: none;
       border-radius: 9999px;
       padding: 11px 18px;
@@ -371,7 +471,7 @@
     }
 
     .feedback-modal-box {
-      background: #fff;
+      background: rgb(var(--color-surface));
       border-radius: 22px;
       width: 100%;
       max-width: 560px;
@@ -389,15 +489,15 @@
       justify-content: space-between;
       gap: 12px;
       padding: 16px 18px;
-      border-bottom: 1px solid #E2E8F0;
+      border-bottom: 1px solid rgb(var(--color-border));
       flex-shrink: 0;
-      background: #F1F5F9;
+      background: rgb(var(--color-bg-alt));
     }
 
     .feedback-modal-title {
       font-weight: 800;
       font-size: 15px;
-      color: #1E293B;
+      color: rgb(var(--color-text));
     }
 
     .feedback-modal-close {
@@ -405,8 +505,8 @@
       height: 34px;
       border-radius: 9999px;
       border: none;
-      background: #E2E8F0;
-      color: #1E293B;
+      background: rgb(var(--color-border));
+      color: rgb(var(--color-text));
       font-size: 16px;
       font-weight: 700;
       cursor: pointer;
@@ -418,7 +518,7 @@
     }
 
     .feedback-modal-close:hover {
-      background: #CBD5E1;
+      background: rgb(var(--color-border-hover));
     }
 
     .feedback-modal-close:active {
@@ -428,7 +528,7 @@
     .feedback-modal-body {
       flex: 1;
       overflow: auto;
-      background: #F1F5F9;
+      background: rgb(var(--color-bg-alt));
       -webkit-overflow-scrolling: touch;
     }
 
@@ -447,10 +547,11 @@
       flex-direction: column;
       align-items: center;
       gap: 14px;
-      background: #F1F5F9;
+      background: rgb(var(--color-bg-alt));
       overflow: auto;
     }
 
+    /* Nền QR luôn TRẮNG cứng bất kể theme — mã QR cần nền sáng để scan được, không đổi theo dark mode. */
     .coffee-qr-image {
       width: 100%;
       max-width: 260px;
@@ -463,7 +564,7 @@
       text-align: center;
       font-size: 14px;
       font-weight: 600;
-      color: #475569;
+      color: rgb(var(--color-text-soft));
     }
 
     .coffee-download-btn {

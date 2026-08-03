@@ -39,6 +39,32 @@ function saveHighscores(hs) {
   localStorage.setItem(STORAGE_KEYS.HIGHSCORE, JSON.stringify(hs));
 }
 
+// ============================================================
+// DARK MODE — attribute data-theme trên <html> đã được set SỚM (script đầu <head> trong index.html,
+// chạy trước khi trang vẽ, tránh nháy sáng) dựa theo lựa chọn đã lưu hoặc prefers-color-scheme. Ở
+// đây chỉ đọc lại giá trị đó và cung cấp hàm đổi/lưu khi người dùng bấm nút trong header.
+const THEME_KEY = "kana_quiz_theme_v1";
+
+function getCurrentTheme() {
+  return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+}
+
+function setTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  localStorage.setItem(THEME_KEY, theme);
+}
+
+// Chỉnh DOM trực tiếp (KHÔNG qua render()) — nút nằm trong header, hiện trên MỌI màn hình kể cả
+// Flashcard đang gõ dở ô nhập âm; render() lại toàn màn sẽ xoá mất chữ đang gõ.
+function toggleTheme() {
+  const next = getCurrentTheme() === "dark" ? "light" : "dark";
+  setTheme(next);
+  document.querySelectorAll('[data-action="toggle-theme"]').forEach((btn) => {
+    btn.textContent = next === "dark" ? "🌙" : "☀️";
+    btn.setAttribute("aria-label", next === "dark" ? "Đang tối, bấm để chuyển sáng" : "Đang sáng, bấm để chuyển tối");
+  });
+}
+
 const EXAM_RESULT_KEY = "kana_quiz_exam_result_v1";
 
 // { [testId]: { score, pass, correctCount, total, mode, date } } — chỉ giữ kết quả GẦN NHẤT mỗi đề
@@ -346,11 +372,23 @@ function containerClass(screen) {
 // Không truyền title: hiện tên app (Home). Có title: hiện nút back (icon trần, không nền) + tiêu đề màn hình.
 // backAction mặc định về Home; các màn học theo bài (flashcard/ghép cặp) truyền "go-lessons"
 // để quay lại đúng màn chọn bài thay vì nhảy hẳn về Home.
+function renderThemeToggleButton() {
+  const isDark = getCurrentTheme() === "dark";
+  return `
+    <button data-action="toggle-theme"
+      aria-label="${isDark ? "Đang tối, bấm để chuyển sáng" : "Đang sáng, bấm để chuyển tối"}"
+      class="w-8 h-8 flex items-center justify-center text-lg shrink-0 active:scale-90 transition">
+      ${isDark ? "🌙" : "☀️"}
+    </button>
+  `;
+}
+
 function renderAppHeader(title, backAction = "go-home") {
   if (!title) {
     return `
-      <div class="sticky top-0 z-40 bg-teal-700 text-white px-4 py-3 flex items-center justify-center shadow-md shrink-0">
+      <div class="relative sticky top-0 z-40 bg-teal-700 text-white px-4 py-3 flex items-center justify-center shadow-md shrink-0">
         <span class="font-bold text-base tracking-wide">🔥 YAMATE KANA</span>
+        <div class="absolute right-3 top-1/2 -translate-y-1/2">${renderThemeToggleButton()}</div>
       </div>
     `;
   }
@@ -361,6 +399,7 @@ function renderAppHeader(title, backAction = "go-home") {
         ←
       </button>
       <h1 class="text-base font-bold tracking-wide truncate">${title}</h1>
+      <div class="ml-auto">${renderThemeToggleButton()}</div>
     </div>
   `;
 }
@@ -447,7 +486,7 @@ function renderHome() {
         <p class="text-ink font-bold italic text-sm">"Học nhiều ngu nhiều, học ít ngu ít, không học không ngu"</p>
       </div>
 
-      <div class="bg-white rounded-2xl shadow-md p-4 mb-3">
+      <div class="bg-card rounded-2xl shadow-md p-4 mb-3">
         <p class="text-sm font-medium text-ink-soft mb-3">Chọn bảng chữ, lẹ lên!</p>
         <div class="grid grid-cols-3 gap-3">
           ${scopes
@@ -488,12 +527,12 @@ function renderHome() {
           📝 Luyện 20 Câu, Chịu Tội Đi
         </button>
         <button data-action="go-exam-list"
-          class="py-4 rounded-2xl bg-ink text-white text-sm font-semibold shadow active:scale-95 transition">
+          class="py-4 rounded-2xl bg-slate-800 text-white text-sm font-semibold shadow active:scale-95 transition">
           🎓 Test Final — Đấu Thật Đấy
         </button>
       </div>
       <button data-action="go-achievements"
-        class="w-full py-3 rounded-2xl bg-white text-ink-soft text-sm font-semibold shadow active:scale-95 transition">
+        class="w-full py-3 rounded-2xl bg-card text-ink-soft text-sm font-semibold shadow active:scale-95 transition">
         🏆 Xem Thành Tích (Dám Không?)
       </button>
     </div>
@@ -552,23 +591,23 @@ function renderAchievements() {
   return `
     ${renderAppHeader("Thành Tích Của Mày")}
     <div class="px-5 pb-8 pt-6 flex-1">
-      <div class="bg-white rounded-2xl shadow p-4 mb-4">
+      <div class="bg-card rounded-2xl shadow p-4 mb-4">
         <p class="text-xs font-semibold text-ink-faint uppercase tracking-wide mb-3">Chữ Đã Nhớ (Flashcard)</p>
         ${progressBar("あ Hiragana", knownHira, 46)}
         ${progressBar("ア Katakana", knownKata, 46)}
       </div>
 
-      <div class="bg-white rounded-2xl shadow p-4 mb-4">
+      <div class="bg-card rounded-2xl shadow p-4 mb-4">
         <p class="text-xs font-semibold text-ink-faint uppercase tracking-wide mb-3">Bài Học Hoàn Thành (/20)</p>
         ${lessonRows}
       </div>
 
-      <div class="bg-white rounded-2xl shadow p-4 mb-4">
+      <div class="bg-card rounded-2xl shadow p-4 mb-4">
         <p class="text-xs font-semibold text-ink-faint uppercase tracking-wide mb-3">Điểm Cao "Luyện 20 Câu"</p>
         ${quizRows}
       </div>
 
-      <div class="bg-white rounded-2xl shadow p-4">
+      <div class="bg-card rounded-2xl shadow p-4">
         <p class="text-xs font-semibold text-ink-faint uppercase tracking-wide mb-3">Test Final</p>
         ${examRows}
       </div>
@@ -595,7 +634,7 @@ function renderLessonCard(lesson, scope, unlocked) {
 
   return `
     <button data-action="start-lesson" data-lesson-id="${lesson.id}" ${locked ? "disabled" : ""}
-      class="text-left p-4 rounded-2xl shadow bg-white transition active:scale-95 flex flex-col gap-2 ${locked ? "opacity-50" : ""
+      class="text-left p-4 rounded-2xl shadow bg-card transition active:scale-95 flex flex-col gap-2 ${locked ? "opacity-50" : ""
     }">
       <div class="flex items-start justify-between gap-2">
         <span class="text-xs font-semibold text-ink-faint">Bài ${lesson.id}</span>
@@ -758,7 +797,7 @@ function inputFeedbackClasses(feedback) {
   if (feedback === "correct") return `${base} bg-status-ok/10 text-status-ok border-status-ok`;
   if (feedback === "wrong") return `${base} bg-status-busy/10 text-status-busy border-status-busy`;
   if (feedback === "empty") return `${base} bg-saffron-100 text-saffron-700 border-saffron-500`;
-  return `${base} bg-white text-ink border-transparent focus:border-teal-700`;
+  return `${base} bg-card text-ink border-transparent focus:border-teal-700`;
 }
 
 function renderStudyFlashcard() {
@@ -796,10 +835,10 @@ function renderStudyFlashcard() {
 
       <div class="flip-scene w-full aspect-square mb-4 active:scale-[0.98] transition">
         <div id="flip-card-inner" data-action="flip-card" class="flip-card cursor-pointer">
-          <div class="flip-face rounded-3xl bg-white shadow-xl flex items-center justify-center">
+          <div class="flip-face rounded-3xl bg-card shadow-xl flex items-center justify-center">
             <span class="text-8xl font-medium text-ink">${card.char}</span>
           </div>
-          <div class="flip-face flip-face--back rounded-3xl bg-white shadow-xl flex flex-col items-center justify-center gap-3">
+          <div class="flip-face flip-face--back rounded-3xl bg-card shadow-xl flex flex-col items-center justify-center gap-3">
             <span class="text-7xl font-medium text-ink">${card.char}</span>
             <span class="text-3xl font-medium text-teal-600">${card.romaji}</span>
           </div>
@@ -970,7 +1009,7 @@ function renderStudyMatching() {
       return `${base} bg-status-busy text-white border-status-busy animate-shake`;
     if ((side === "left" && m.selectedLeft === key) || (side === "right" && m.selectedRight === key))
       return `${base} bg-teal-700 text-white border-teal-700`;
-    return `${base} bg-white text-ink border-transparent`;
+    return `${base} bg-card text-ink border-transparent`;
   }
 
   const leftHtml = m.leftOrder
@@ -1148,11 +1187,11 @@ function renderQuiz() {
     .map((opt, idx) => {
       const isCorrect = opt === q.card;
       const isChosen = selected === idx;
-      let cls = "bg-white text-ink border-transparent";
+      let cls = "bg-card text-ink border-transparent";
       if (selected !== null) {
         if (isCorrect) cls = "bg-status-ok text-white border-status-ok";
         else if (isChosen) cls = "bg-status-busy text-white border-status-busy animate-shake";
-        else cls = "bg-white text-ink-faint border-transparent";
+        else cls = "bg-card text-ink-faint border-transparent";
       }
       const label = isJp2Romaji ? opt.romaji : opt.char;
       return `
@@ -1178,7 +1217,7 @@ function renderQuiz() {
     }%"></div>
       </div>
 
-      <div class="w-full py-10 rounded-3xl bg-white shadow-xl flex items-center justify-center mb-6">
+      <div class="w-full py-10 rounded-3xl bg-card shadow-xl flex items-center justify-center mb-6">
         ${promptHtml}
       </div>
 
@@ -1214,7 +1253,7 @@ function renderQuizResult() {
         const correctLabel = isJp2Romaji ? w.card.romaji : w.card.char;
         const yourLabel = isJp2Romaji ? w.userAnswer.romaji : w.userAnswer.char;
         return `
-          <div class="bg-white rounded-xl shadow p-3 flex items-center justify-between gap-3">
+          <div class="bg-card rounded-xl shadow p-3 flex items-center justify-between gap-3">
             <span class="text-3xl font-semibold text-ink w-14 text-center shrink-0">${questionLabel}</span>
             <div class="flex-1 text-sm text-right">
               <p class="text-status-busy font-medium">Chọn ngu: ${yourLabel}</p>
@@ -1228,7 +1267,7 @@ function renderQuizResult() {
   return `
     ${renderAppHeader("Kết Quả — Ngu Cỡ Nào Đây")}
     <div class="px-5 pb-8 pt-6 flex-1">
-      <div class="bg-white rounded-3xl shadow-xl p-6 text-center mb-8">
+      <div class="bg-card rounded-3xl shadow-xl p-6 text-center mb-8">
         <p class="text-5xl font-bold text-teal-700">${score}/${total}</p>
         <p class="text-ink-soft font-medium mt-1">${percent}% đúng, tự lượng sức nha</p>
       </div>
@@ -1280,7 +1319,7 @@ function renderExamList() {
   return `
     ${renderAppHeader("Chọn Đề Test Final (Hay Sợ?)")}
     <div class="px-4 pb-8 pt-6 flex-1">
-      <div class="bg-white rounded-2xl shadow-md p-3 mb-6 grid grid-cols-2 gap-2">
+      <div class="bg-card rounded-2xl shadow-md p-3 mb-6 grid grid-cols-2 gap-2">
         <button data-action="set-exam-mode" data-mode="full"
           class="py-2.5 rounded-xl text-sm font-semibold transition active:scale-95 ${state.examMode === "full" ? "bg-teal-700 text-white shadow" : "bg-cream-border text-ink-soft"
     }">
@@ -1303,7 +1342,7 @@ function renderExamList() {
         : `<span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-cream-border text-ink-faint self-start">Chưa thi lần nào, sợ à?</span>`;
       return `
           <button data-action="start-exam" data-test-id="${t.id}"
-            class="text-left p-4 rounded-2xl shadow bg-white transition active:scale-95 flex flex-col gap-1.5">
+            class="text-left p-4 rounded-2xl shadow bg-card transition active:scale-95 flex flex-col gap-1.5">
             <p class="font-semibold text-ink">${t.title}</p>
             <p class="text-xs text-ink-soft">${countLabel} · 20 phút</p>
             ${badge}
@@ -1386,7 +1425,7 @@ function tickExamTimer() {
     el.className = "font-bold text-white bg-status-busy px-3 py-1 rounded-full";
   } else {
     el.textContent = `⏱ ${formatTime(remaining)}`;
-    el.className = "font-bold text-ink-soft bg-white/70 px-3 py-1 rounded-full";
+    el.className = "font-bold text-ink-soft bg-card/70 px-3 py-1 rounded-full";
   }
 }
 
@@ -1454,7 +1493,7 @@ function renderExamQuestion() {
     .map(
       (letter) => `
       <button data-action="select-exam-answer" data-letter="${letter}"
-        class="w-full text-left py-3 px-4 rounded-2xl border-2 transition active:scale-[0.98] ${selected === letter ? "bg-teal-700 text-white border-teal-700" : "bg-white text-ink border-transparent shadow"
+        class="w-full text-left py-3 px-4 rounded-2xl border-2 transition active:scale-[0.98] ${selected === letter ? "bg-teal-700 text-white border-teal-700" : "bg-card text-ink border-transparent shadow"
         }">
         <span class="font-bold mr-2">${letter}.</span>${q.options[letter]}
       </button>`
@@ -1466,10 +1505,10 @@ function renderExamQuestion() {
     <div class="px-5 pb-8 pt-6 flex-1">
       <div class="flex justify-between items-center text-sm font-medium text-ink-faint mb-6">
         <span>Câu ${ex.currentIndex + 1}/${total}</span>
-        <span id="exam-timer" class="font-bold text-ink-soft bg-white/70 px-3 py-1 rounded-full">⏱ --:--</span>
+        <span id="exam-timer" class="font-bold text-ink-soft bg-card/70 px-3 py-1 rounded-full">⏱ --:--</span>
       </div>
 
-      <div class="w-full min-h-[120px] py-8 px-5 rounded-3xl bg-white shadow-xl flex items-center justify-center mb-6">
+      <div class="w-full min-h-[120px] py-8 px-5 rounded-3xl bg-card shadow-xl flex items-center justify-center mb-6">
         <p class="text-2xl font-semibold text-ink text-center">${q.question_text}</p>
       </div>
 
@@ -1523,7 +1562,7 @@ function renderExamResult() {
     ? r.wrong
       .map(
         ({ question: q, userAnswer }) => `
-      <div class="bg-white rounded-xl shadow p-4 flex flex-col gap-1.5">
+      <div class="bg-card rounded-xl shadow p-4 flex flex-col gap-1.5">
         <p class="text-base font-semibold text-ink">${q.question_text}</p>
         <p class="text-sm text-status-busy font-medium">Bạn chọn: ${userAnswer ? q.options[userAnswer] : "(bỏ trống, lười vậy)"
           }</p>
@@ -1537,7 +1576,7 @@ function renderExamResult() {
   return `
     ${renderAppHeader("Kết Quả Test Final")}
     <div class="px-5 pb-8 pt-6 flex-1">
-      <div class="bg-white rounded-3xl shadow-xl p-6 text-center mb-6">
+      <div class="bg-card rounded-3xl shadow-xl p-6 text-center mb-6">
         <p class="text-5xl font-bold ${r.pass ? "text-status-ok" : "text-status-busy"}">${r.score}<span class="text-2xl">/100</span></p>
         <p class="text-lg font-bold mt-2 ${r.pass ? "text-status-ok" : "text-status-busy"}">${r.pass ? "✅ ĐẠT" : "❌ KHÔNG ĐẠT"}</p>
         <p class="text-ink-soft font-medium mt-2">${r.correctCount}/${r.total} câu đúng</p>
@@ -1681,7 +1720,7 @@ function renderTypingPractice() {
     <div class="px-5 pb-8 pt-6 flex-1">
       <p class="text-center text-sm text-ink-faint font-medium mb-6">Từ ${t.currentIndex + 1}/${total}</p>
 
-      <div class="w-full py-10 rounded-3xl bg-white shadow-xl flex flex-col items-center justify-center gap-2 mb-3">
+      <div class="w-full py-10 rounded-3xl bg-card shadow-xl flex flex-col items-center justify-center gap-2 mb-3">
         <p data-action="toggle-typing-hint"
           class="text-5xl font-semibold text-ink tracking-wide cursor-pointer select-none active:opacity-70 transition">
           ${target.kana}
@@ -1695,7 +1734,7 @@ function renderTypingPractice() {
 
       <input id="typing-input" type="text" placeholder="Gõ romaji vào đây…"
         autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-        class="kana-text-input w-full py-4 px-4 rounded-2xl text-center text-2xl font-medium border-2 border-transparent bg-white shadow outline-none focus:border-teal-700 transition mb-2" />
+        class="kana-text-input w-full py-4 px-4 rounded-2xl text-center text-2xl font-medium border-2 border-transparent bg-card shadow outline-none focus:border-teal-700 transition mb-2" />
       ${t.scope === "katakana"
       ? `<p class="text-center text-xs text-ink-faint mb-4">💡 Trường âm gõ dấu "-" nhé (vd: ke-ki → ケーキ)</p>`
       : `<div class="mb-4"></div>`
@@ -1854,6 +1893,9 @@ document.getElementById("app").addEventListener("click", (e) => {
     case "go-achievements":
       state.screen = "achievements";
       render();
+      break;
+    case "toggle-theme":
+      toggleTheme();
       break;
   }
 });
