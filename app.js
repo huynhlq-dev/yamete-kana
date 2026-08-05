@@ -791,6 +791,13 @@ function escapeHtml(str) {
   return str.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+// Bọc span highlight quanh MỌI lần xuất hiện của char trong word (thường chỉ 1 lần, xử lý tổng
+// quát cho chắc). text-slate-800 CỐ ĐỊNH (không phải text-ink) vì nền saffron-100 cũng cố định,
+// không đổi theo dark mode — dùng text-ink ở đây sẽ ra chữ sáng trên nền sáng ở dark mode.
+function highlightChar(word, char) {
+  return word.split(char).join(`<span class="bg-saffron-100 text-slate-800 rounded px-0.5">${char}</span>`);
+}
+
 // Border/nền ô nhập âm theo kết quả chấm: xanh (đúng), đỏ (sai), vàng (bỏ trống), trung tính (chưa lật)
 function inputFeedbackClasses(feedback) {
   const base = "kana-text-input w-full py-3 px-4 rounded-2xl text-center text-lg font-medium border-2 outline-none transition";
@@ -836,11 +843,18 @@ function renderStudyFlashcard() {
       <div class="flip-scene w-full aspect-square mb-4 active:scale-[0.98] transition">
         <div id="flip-card-inner" data-action="flip-card" class="flip-card cursor-pointer">
           <div class="flip-face rounded-3xl bg-card shadow-xl flex items-center justify-center">
-            <span class="text-8xl font-medium text-ink">${card.char}</span>
+            <span class="text-8xl font-medium text-slate-800 bg-saffron-100 rounded-2xl px-5 py-1">${card.char}</span>
           </div>
-          <div class="flip-face flip-face--back rounded-3xl bg-card shadow-xl flex flex-col items-center justify-center gap-3">
-            <span class="text-7xl font-medium text-ink">${card.char}</span>
-            <span class="text-3xl font-medium text-teal-600">${card.romaji}</span>
+          <div class="flip-face flip-face--back rounded-3xl bg-card shadow-xl flex flex-col items-center justify-center gap-2 px-5 py-4">
+            <span class="text-6xl font-medium text-ink">${card.char}</span>
+            <span class="text-xl font-medium text-teal-600">${card.romaji}</span>
+            ${card.word
+      ? `<div class="w-full mt-1 pt-3 border-t border-cream-border flex flex-col items-center gap-1 overflow-hidden">
+                     <p class="text-xl font-semibold text-ink tracking-wide">${highlightChar(card.word, card.char)}</p>
+                     <p class="text-xs text-ink-faint text-center">${card.wordRomaji} · ${card.meaning}</p>
+                   </div>`
+      : ""
+    }
           </div>
         </div>
       </div>

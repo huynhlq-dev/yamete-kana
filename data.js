@@ -1,14 +1,19 @@
 /**
  * data.js
  * Dữ liệu bảng chữ cái Hiragana và Katakana cơ bản (46 chữ mỗi bảng).
- * Mỗi phần tử: { char, romaji, type, group, strokeLevel?, lookalike? }
+ * Mỗi phần tử: { char, romaji, type, group, strokeLevel?, lookalike?, word, wordRomaji, meaning }
  *   - char:        ký tự tiếng Nhật
- *   - romaji:      cách đọc La-tinh hóa
+ *   - romaji:      cách đọc La-tinh hóa CỦA RIÊNG char (âm đơn) — dùng để chấm ô nhập ở Flashcard,
+ *                  sinh câu hỏi trắc nghiệm, ghép cặp, chip gợi ý Luyện Gõ. KHÔNG phải romaji của word.
  *   - type:        "hiragana" | "katakana"
  *   - group:       nhóm phụ âm (vowel, k, s, t, n, h, m, y, r, w) — dùng cho 10 bài học theo hàng
  *   - strokeLevel: "easy" | "mid" | "hard" — độ phức tạp nét vẽ, chỉ gắn cho một số chữ tiêu biểu
  *                  (dùng cho 3 bài luyện nét). Không phải chữ nào cũng có field này.
  *   - lookalike:   true — chữ nằm trong nhóm kinh điển hay bị nhầm hình dạng (dùng cho bài 14).
+ *   - word:        từ ví dụ có chứa char (đã verify bằng script lúc sinh dữ liệu — mọi word đều
+ *                  chứa đúng char dưới dạng chuỗi con, để highlight lúc render không bị "trật").
+ *   - wordRomaji:  romaji của CẢ word (khác hẳn field romaji ở trên) — dùng hiện ở mặt sau Flashcard.
+ *   - meaning:     nghĩa tiếng Việt của word.
  *
  * strokeLevel/lookalike được chọn thủ công dựa trên số nét thật của từng chữ (không phải suy ra
  * tự động), rải đều trên nhiều hàng phụ âm khác nhau để bài luyện nét vẫn có đủ chữ để học dù
@@ -22,119 +27,119 @@
  */
 
 const HIRAGANA = [
-  { char: "あ", romaji: "a", type: "hiragana", group: "vowel", strokeLevel: "hard" },
-  { char: "い", romaji: "i", type: "hiragana", group: "vowel", strokeLevel: "easy", lookalike: true },
-  { char: "う", romaji: "u", type: "hiragana", group: "vowel", strokeLevel: "mid" },
-  { char: "え", romaji: "e", type: "hiragana", group: "vowel" },
-  { char: "お", romaji: "o", type: "hiragana", group: "vowel" },
+  { char: "あ", romaji: "a", type: "hiragana", group: "vowel", strokeLevel: "hard", word: "あめ", wordRomaji: "ame", meaning: "mưa / kẹo" },
+  { char: "い", romaji: "i", type: "hiragana", group: "vowel", strokeLevel: "easy", lookalike: true, word: "いぬ", wordRomaji: "inu", meaning: "con chó" },
+  { char: "う", romaji: "u", type: "hiragana", group: "vowel", strokeLevel: "mid", word: "うし", wordRomaji: "ushi", meaning: "con bò" },
+  { char: "え", romaji: "e", type: "hiragana", group: "vowel", word: "えき", wordRomaji: "eki", meaning: "nhà ga" },
+  { char: "お", romaji: "o", type: "hiragana", group: "vowel", word: "おかね", wordRomaji: "okane", meaning: "tiền" },
 
-  { char: "か", romaji: "ka", type: "hiragana", group: "k" },
-  { char: "き", romaji: "ki", type: "hiragana", group: "k", strokeLevel: "hard" },
-  { char: "く", romaji: "ku", type: "hiragana", group: "k", strokeLevel: "easy" },
-  { char: "け", romaji: "ke", type: "hiragana", group: "k" },
-  { char: "こ", romaji: "ko", type: "hiragana", group: "k", strokeLevel: "mid" },
+  { char: "か", romaji: "ka", type: "hiragana", group: "k", word: "かさ", wordRomaji: "kasa", meaning: "cái ô" },
+  { char: "き", romaji: "ki", type: "hiragana", group: "k", strokeLevel: "hard", word: "きつね", wordRomaji: "kitsune", meaning: "con cáo" },
+  { char: "く", romaji: "ku", type: "hiragana", group: "k", strokeLevel: "easy", word: "くるま", wordRomaji: "kuruma", meaning: "xe hơi" },
+  { char: "け", romaji: "ke", type: "hiragana", group: "k", word: "けむり", wordRomaji: "kemuri", meaning: "khói" },
+  { char: "こ", romaji: "ko", type: "hiragana", group: "k", strokeLevel: "mid", word: "こども", wordRomaji: "kodomo", meaning: "trẻ em" },
 
-  { char: "さ", romaji: "sa", type: "hiragana", group: "s" },
-  { char: "し", romaji: "shi", type: "hiragana", group: "s", strokeLevel: "easy" },
-  { char: "す", romaji: "su", type: "hiragana", group: "s", strokeLevel: "mid" },
-  { char: "せ", romaji: "se", type: "hiragana", group: "s", strokeLevel: "hard" },
-  { char: "そ", romaji: "so", type: "hiragana", group: "s" },
+  { char: "さ", romaji: "sa", type: "hiragana", group: "s", word: "さくら", wordRomaji: "sakura", meaning: "hoa anh đào" },
+  { char: "し", romaji: "shi", type: "hiragana", group: "s", strokeLevel: "easy", word: "しろ", wordRomaji: "shiro", meaning: "màu trắng" },
+  { char: "す", romaji: "su", type: "hiragana", group: "s", strokeLevel: "mid", word: "すし", wordRomaji: "sushi", meaning: "sushi" },
+  { char: "せ", romaji: "se", type: "hiragana", group: "s", strokeLevel: "hard", word: "せんせい", wordRomaji: "sensei", meaning: "giáo viên" },
+  { char: "そ", romaji: "so", type: "hiragana", group: "s", word: "そら", wordRomaji: "sora", meaning: "bầu trời" },
 
-  { char: "た", romaji: "ta", type: "hiragana", group: "t", strokeLevel: "hard" },
-  { char: "ち", romaji: "chi", type: "hiragana", group: "t" },
-  { char: "つ", romaji: "tsu", type: "hiragana", group: "t", strokeLevel: "easy" },
-  { char: "て", romaji: "te", type: "hiragana", group: "t" },
-  { char: "と", romaji: "to", type: "hiragana", group: "t", strokeLevel: "mid" },
+  { char: "た", romaji: "ta", type: "hiragana", group: "t", strokeLevel: "hard", word: "たまご", wordRomaji: "tamago", meaning: "trứng" },
+  { char: "ち", romaji: "chi", type: "hiragana", group: "t", word: "ちず", wordRomaji: "chizu", meaning: "bản đồ" },
+  { char: "つ", romaji: "tsu", type: "hiragana", group: "t", strokeLevel: "easy", word: "つき", wordRomaji: "tsuki", meaning: "mặt trăng" },
+  { char: "て", romaji: "te", type: "hiragana", group: "t", word: "て", wordRomaji: "te", meaning: "tay" },
+  { char: "と", romaji: "to", type: "hiragana", group: "t", strokeLevel: "mid", word: "とり", wordRomaji: "tori", meaning: "con chim" },
 
-  { char: "な", romaji: "na", type: "hiragana", group: "n", strokeLevel: "hard" },
-  { char: "に", romaji: "ni", type: "hiragana", group: "n" },
-  { char: "ぬ", romaji: "nu", type: "hiragana", group: "n", lookalike: true },
-  { char: "ね", romaji: "ne", type: "hiragana", group: "n", strokeLevel: "mid", lookalike: true },
-  { char: "の", romaji: "no", type: "hiragana", group: "n", strokeLevel: "easy" },
+  { char: "な", romaji: "na", type: "hiragana", group: "n", strokeLevel: "hard", word: "なつ", wordRomaji: "natsu", meaning: "mùa hè" },
+  { char: "に", romaji: "ni", type: "hiragana", group: "n", word: "にく", wordRomaji: "niku", meaning: "thịt" },
+  { char: "ぬ", romaji: "nu", type: "hiragana", group: "n", lookalike: true, word: "ぬの", wordRomaji: "nuno", meaning: "vải" },
+  { char: "ね", romaji: "ne", type: "hiragana", group: "n", strokeLevel: "mid", lookalike: true, word: "ねこ", wordRomaji: "neko", meaning: "con mèo" },
+  { char: "の", romaji: "no", type: "hiragana", group: "n", strokeLevel: "easy", word: "のり", wordRomaji: "nori", meaning: "rong biển" },
 
-  { char: "は", romaji: "ha", type: "hiragana", group: "h", strokeLevel: "mid", lookalike: true },
-  { char: "ひ", romaji: "hi", type: "hiragana", group: "h" },
-  { char: "ふ", romaji: "fu", type: "hiragana", group: "h" },
-  { char: "へ", romaji: "he", type: "hiragana", group: "h", strokeLevel: "easy" },
-  { char: "ほ", romaji: "ho", type: "hiragana", group: "h", strokeLevel: "hard", lookalike: true },
+  { char: "は", romaji: "ha", type: "hiragana", group: "h", strokeLevel: "mid", lookalike: true, word: "はな", wordRomaji: "hana", meaning: "bông hoa" },
+  { char: "ひ", romaji: "hi", type: "hiragana", group: "h", word: "ひこうき", wordRomaji: "hikouki", meaning: "máy bay" },
+  { char: "ふ", romaji: "fu", type: "hiragana", group: "h", word: "ふね", wordRomaji: "fune", meaning: "thuyền" },
+  { char: "へ", romaji: "he", type: "hiragana", group: "h", strokeLevel: "easy", word: "へび", wordRomaji: "hebi", meaning: "con rắn" },
+  { char: "ほ", romaji: "ho", type: "hiragana", group: "h", strokeLevel: "hard", lookalike: true, word: "ほん", wordRomaji: "hon", meaning: "quyển sách" },
 
-  { char: "ま", romaji: "ma", type: "hiragana", group: "m" },
-  { char: "み", romaji: "mi", type: "hiragana", group: "m", strokeLevel: "easy" },
-  { char: "む", romaji: "mu", type: "hiragana", group: "m" },
-  { char: "め", romaji: "me", type: "hiragana", group: "m", strokeLevel: "mid", lookalike: true },
-  { char: "も", romaji: "mo", type: "hiragana", group: "m", strokeLevel: "hard" },
+  { char: "ま", romaji: "ma", type: "hiragana", group: "m", word: "まど", wordRomaji: "mado", meaning: "cửa sổ" },
+  { char: "み", romaji: "mi", type: "hiragana", group: "m", strokeLevel: "easy", word: "みず", wordRomaji: "mizu", meaning: "nước" },
+  { char: "む", romaji: "mu", type: "hiragana", group: "m", word: "むし", wordRomaji: "mushi", meaning: "côn trùng" },
+  { char: "め", romaji: "me", type: "hiragana", group: "m", strokeLevel: "mid", lookalike: true, word: "め", wordRomaji: "me", meaning: "mắt" },
+  { char: "も", romaji: "mo", type: "hiragana", group: "m", strokeLevel: "hard", word: "もり", wordRomaji: "mori", meaning: "rừng" },
 
-  { char: "や", romaji: "ya", type: "hiragana", group: "y", strokeLevel: "hard" },
-  { char: "ゆ", romaji: "yu", type: "hiragana", group: "y", strokeLevel: "easy" },
-  { char: "よ", romaji: "yo", type: "hiragana", group: "y", strokeLevel: "mid" },
+  { char: "や", romaji: "ya", type: "hiragana", group: "y", strokeLevel: "hard", word: "やま", wordRomaji: "yama", meaning: "núi" },
+  { char: "ゆ", romaji: "yu", type: "hiragana", group: "y", strokeLevel: "easy", word: "ゆき", wordRomaji: "yuki", meaning: "tuyết" },
+  { char: "よ", romaji: "yo", type: "hiragana", group: "y", strokeLevel: "mid", word: "よる", wordRomaji: "yoru", meaning: "đêm" },
 
-  { char: "ら", romaji: "ra", type: "hiragana", group: "r" },
-  { char: "り", romaji: "ri", type: "hiragana", group: "r", strokeLevel: "mid", lookalike: true },
-  { char: "る", romaji: "ru", type: "hiragana", group: "r", strokeLevel: "easy", lookalike: true },
-  { char: "れ", romaji: "re", type: "hiragana", group: "r" },
-  { char: "ろ", romaji: "ro", type: "hiragana", group: "r", lookalike: true },
+  { char: "ら", romaji: "ra", type: "hiragana", group: "r", word: "らいおん", wordRomaji: "raion", meaning: "sư tử" },
+  { char: "り", romaji: "ri", type: "hiragana", group: "r", strokeLevel: "mid", lookalike: true, word: "りんご", wordRomaji: "ringo", meaning: "quả táo" },
+  { char: "る", romaji: "ru", type: "hiragana", group: "r", strokeLevel: "easy", lookalike: true, word: "るす", wordRomaji: "rusu", meaning: "vắng nhà" },
+  { char: "れ", romaji: "re", type: "hiragana", group: "r", word: "れいぞうこ", wordRomaji: "reizouko", meaning: "tủ lạnh" },
+  { char: "ろ", romaji: "ro", type: "hiragana", group: "r", lookalike: true, word: "ろうそく", wordRomaji: "rousoku", meaning: "nến" },
 
-  { char: "わ", romaji: "wa", type: "hiragana", group: "w", strokeLevel: "mid", lookalike: true },
-  { char: "を", romaji: "wo", type: "hiragana", group: "w", strokeLevel: "hard" },
-  { char: "ん", romaji: "n", type: "hiragana", group: "w", strokeLevel: "easy" },
+  { char: "わ", romaji: "wa", type: "hiragana", group: "w", strokeLevel: "mid", lookalike: true, word: "わたし", wordRomaji: "watashi", meaning: "tôi" },
+  { char: "を", romaji: "wo", type: "hiragana", group: "w", strokeLevel: "hard", word: "を", wordRomaji: "o", meaning: "trợ từ tân ngữ" },
+  { char: "ん", romaji: "n", type: "hiragana", group: "w", strokeLevel: "easy", word: "ほん", wordRomaji: "hon", meaning: "quyển sách" },
 ];
 
 const KATAKANA = [
-  { char: "ア", romaji: "a", type: "katakana", group: "vowel", strokeLevel: "easy" },
-  { char: "イ", romaji: "i", type: "katakana", group: "vowel", strokeLevel: "mid" },
-  { char: "ウ", romaji: "u", type: "katakana", group: "vowel", strokeLevel: "hard" },
-  { char: "エ", romaji: "e", type: "katakana", group: "vowel" },
-  { char: "オ", romaji: "o", type: "katakana", group: "vowel" },
+  { char: "ア", romaji: "a", type: "katakana", group: "vowel", strokeLevel: "easy", word: "アイス", wordRomaji: "aisu", meaning: "kem" },
+  { char: "イ", romaji: "i", type: "katakana", group: "vowel", strokeLevel: "mid", word: "イヌ", wordRomaji: "inu", meaning: "con chó" },
+  { char: "ウ", romaji: "u", type: "katakana", group: "vowel", strokeLevel: "hard", word: "ウサギ", wordRomaji: "usagi", meaning: "con thỏ" },
+  { char: "エ", romaji: "e", type: "katakana", group: "vowel", word: "エビ", wordRomaji: "ebi", meaning: "tôm" },
+  { char: "オ", romaji: "o", type: "katakana", group: "vowel", word: "オレンジ", wordRomaji: "orenji", meaning: "cam" },
 
-  { char: "カ", romaji: "ka", type: "katakana", group: "k" },
-  { char: "キ", romaji: "ki", type: "katakana", group: "k", strokeLevel: "hard" },
-  { char: "ク", romaji: "ku", type: "katakana", group: "k", strokeLevel: "easy", lookalike: true },
-  { char: "ケ", romaji: "ke", type: "katakana", group: "k", lookalike: true },
-  { char: "コ", romaji: "ko", type: "katakana", group: "k", strokeLevel: "mid" },
+  { char: "カ", romaji: "ka", type: "katakana", group: "k", word: "カメラ", wordRomaji: "kamera", meaning: "máy ảnh" },
+  { char: "キ", romaji: "ki", type: "katakana", group: "k", strokeLevel: "hard", word: "キーボード", wordRomaji: "kiiboodo", meaning: "bàn phím" },
+  { char: "ク", romaji: "ku", type: "katakana", group: "k", strokeLevel: "easy", lookalike: true, word: "クリーム", wordRomaji: "kuriimu", meaning: "kem (cream)" },
+  { char: "ケ", romaji: "ke", type: "katakana", group: "k", lookalike: true, word: "ケーキ", wordRomaji: "keeki", meaning: "bánh kem" },
+  { char: "コ", romaji: "ko", type: "katakana", group: "k", strokeLevel: "mid", word: "コーヒー", wordRomaji: "koohii", meaning: "cà phê" },
 
-  { char: "サ", romaji: "sa", type: "katakana", group: "s" },
-  { char: "シ", romaji: "shi", type: "katakana", group: "s", strokeLevel: "hard", lookalike: true },
-  { char: "ス", romaji: "su", type: "katakana", group: "s", strokeLevel: "easy" },
-  { char: "セ", romaji: "se", type: "katakana", group: "s" },
-  { char: "ソ", romaji: "so", type: "katakana", group: "s", strokeLevel: "mid", lookalike: true },
+  { char: "サ", romaji: "sa", type: "katakana", group: "s", word: "サッカー", wordRomaji: "sakkaa", meaning: "bóng đá" },
+  { char: "シ", romaji: "shi", type: "katakana", group: "s", strokeLevel: "hard", lookalike: true, word: "シャツ", wordRomaji: "shatsu", meaning: "áo sơ mi" },
+  { char: "ス", romaji: "su", type: "katakana", group: "s", strokeLevel: "easy", word: "スーパー", wordRomaji: "suupaa", meaning: "siêu thị" },
+  { char: "セ", romaji: "se", type: "katakana", group: "s", word: "セーター", wordRomaji: "seetaa", meaning: "áo len" },
+  { char: "ソ", romaji: "so", type: "katakana", group: "s", strokeLevel: "mid", lookalike: true, word: "ソファ", wordRomaji: "sofa", meaning: "ghế sofa" },
 
-  { char: "タ", romaji: "ta", type: "katakana", group: "t", strokeLevel: "mid" },
-  { char: "チ", romaji: "chi", type: "katakana", group: "t", lookalike: true },
-  { char: "ツ", romaji: "tsu", type: "katakana", group: "t", strokeLevel: "hard", lookalike: true },
-  { char: "テ", romaji: "te", type: "katakana", group: "t", lookalike: true },
-  { char: "ト", romaji: "to", type: "katakana", group: "t", strokeLevel: "easy" },
+  { char: "タ", romaji: "ta", type: "katakana", group: "t", strokeLevel: "mid", word: "タクシー", wordRomaji: "takushii", meaning: "taxi" },
+  { char: "チ", romaji: "chi", type: "katakana", group: "t", lookalike: true, word: "チーズ", wordRomaji: "chiizu", meaning: "phô mai" },
+  { char: "ツ", romaji: "tsu", type: "katakana", group: "t", strokeLevel: "hard", lookalike: true, word: "ツアー", wordRomaji: "tsuaa", meaning: "chuyến du lịch" },
+  { char: "テ", romaji: "te", type: "katakana", group: "t", lookalike: true, word: "テレビ", wordRomaji: "terebi", meaning: "ti vi" },
+  { char: "ト", romaji: "to", type: "katakana", group: "t", strokeLevel: "easy", word: "トイレ", wordRomaji: "toire", meaning: "nhà vệ sinh" },
 
-  { char: "ナ", romaji: "na", type: "katakana", group: "n", strokeLevel: "mid" },
-  { char: "ニ", romaji: "ni", type: "katakana", group: "n" },
-  { char: "ヌ", romaji: "nu", type: "katakana", group: "n" },
-  { char: "ネ", romaji: "ne", type: "katakana", group: "n", strokeLevel: "hard" },
-  { char: "ノ", romaji: "no", type: "katakana", group: "n", strokeLevel: "easy" },
+  { char: "ナ", romaji: "na", type: "katakana", group: "n", strokeLevel: "mid", word: "ナイフ", wordRomaji: "naifu", meaning: "dao" },
+  { char: "ニ", romaji: "ni", type: "katakana", group: "n", word: "ニュース", wordRomaji: "nyuusu", meaning: "tin tức" },
+  { char: "ヌ", romaji: "nu", type: "katakana", group: "n", word: "ヌードル", wordRomaji: "nuudoru", meaning: "mì" },
+  { char: "ネ", romaji: "ne", type: "katakana", group: "n", strokeLevel: "hard", word: "ネコ", wordRomaji: "neko", meaning: "con mèo" },
+  { char: "ノ", romaji: "no", type: "katakana", group: "n", strokeLevel: "easy", word: "ノート", wordRomaji: "nooto", meaning: "sổ tay" },
 
-  { char: "ハ", romaji: "ha", type: "katakana", group: "h", strokeLevel: "mid" },
-  { char: "ヒ", romaji: "hi", type: "katakana", group: "h" },
-  { char: "フ", romaji: "fu", type: "katakana", group: "h", strokeLevel: "easy" },
-  { char: "ヘ", romaji: "he", type: "katakana", group: "h" },
-  { char: "ホ", romaji: "ho", type: "katakana", group: "h", strokeLevel: "hard" },
+  { char: "ハ", romaji: "ha", type: "katakana", group: "h", strokeLevel: "mid", word: "ハンバーガー", wordRomaji: "hanbaagaa", meaning: "hamburger" },
+  { char: "ヒ", romaji: "hi", type: "katakana", group: "h", word: "ヒーター", wordRomaji: "hiitaa", meaning: "máy sưởi" },
+  { char: "フ", romaji: "fu", type: "katakana", group: "h", strokeLevel: "easy", word: "フォーク", wordRomaji: "fooku", meaning: "nĩa" },
+  { char: "ヘ", romaji: "he", type: "katakana", group: "h", word: "ヘリコプター", wordRomaji: "herikoputaa", meaning: "trực thăng" },
+  { char: "ホ", romaji: "ho", type: "katakana", group: "h", strokeLevel: "hard", word: "ホテル", wordRomaji: "hoteru", meaning: "khách sạn" },
 
-  { char: "マ", romaji: "ma", type: "katakana", group: "m" },
-  { char: "ミ", romaji: "mi", type: "katakana", group: "m" },
-  { char: "ム", romaji: "mu", type: "katakana", group: "m", strokeLevel: "easy" },
-  { char: "メ", romaji: "me", type: "katakana", group: "m", strokeLevel: "mid" },
-  { char: "モ", romaji: "mo", type: "katakana", group: "m", strokeLevel: "hard" },
+  { char: "マ", romaji: "ma", type: "katakana", group: "m", word: "マウス", wordRomaji: "mausu", meaning: "chuột máy tính" },
+  { char: "ミ", romaji: "mi", type: "katakana", group: "m", word: "ミルク", wordRomaji: "miruku", meaning: "sữa" },
+  { char: "ム", romaji: "mu", type: "katakana", group: "m", strokeLevel: "easy", word: "ムード", wordRomaji: "muudo", meaning: "tâm trạng" },
+  { char: "メ", romaji: "me", type: "katakana", group: "m", strokeLevel: "mid", word: "メモ", wordRomaji: "memo", meaning: "ghi chú" },
+  { char: "モ", romaji: "mo", type: "katakana", group: "m", strokeLevel: "hard", word: "モバイル", wordRomaji: "mobairu", meaning: "điện thoại di động" },
 
-  { char: "ヤ", romaji: "ya", type: "katakana", group: "y", strokeLevel: "mid" },
-  { char: "ユ", romaji: "yu", type: "katakana", group: "y", strokeLevel: "easy" },
-  { char: "ヨ", romaji: "yo", type: "katakana", group: "y", strokeLevel: "hard" },
+  { char: "ヤ", romaji: "ya", type: "katakana", group: "y", strokeLevel: "mid", word: "ヤギ", wordRomaji: "yagi", meaning: "con dê" },
+  { char: "ユ", romaji: "yu", type: "katakana", group: "y", strokeLevel: "easy", word: "ユーザー", wordRomaji: "yuuzaa", meaning: "người dùng" },
+  { char: "ヨ", romaji: "yo", type: "katakana", group: "y", strokeLevel: "hard", word: "ヨーグルト", wordRomaji: "yooguruto", meaning: "sữa chua" },
 
-  { char: "ラ", romaji: "ra", type: "katakana", group: "r" },
-  { char: "リ", romaji: "ri", type: "katakana", group: "r", strokeLevel: "mid" },
-  { char: "ル", romaji: "ru", type: "katakana", group: "r", strokeLevel: "easy" },
-  { char: "レ", romaji: "re", type: "katakana", group: "r" },
-  { char: "ロ", romaji: "ro", type: "katakana", group: "r", strokeLevel: "hard" },
+  { char: "ラ", romaji: "ra", type: "katakana", group: "r", word: "ラジオ", wordRomaji: "rajio", meaning: "đài radio" },
+  { char: "リ", romaji: "ri", type: "katakana", group: "r", strokeLevel: "mid", word: "リスト", wordRomaji: "risuto", meaning: "danh sách" },
+  { char: "ル", romaji: "ru", type: "katakana", group: "r", strokeLevel: "easy", word: "ルーム", wordRomaji: "ruumu", meaning: "phòng" },
+  { char: "レ", romaji: "re", type: "katakana", group: "r", word: "レストラン", wordRomaji: "resutoran", meaning: "nhà hàng" },
+  { char: "ロ", romaji: "ro", type: "katakana", group: "r", strokeLevel: "hard", word: "ロボット", wordRomaji: "robotto", meaning: "robot" },
 
-  { char: "ワ", romaji: "wa", type: "katakana", group: "w", strokeLevel: "easy", lookalike: true },
-  { char: "ヲ", romaji: "wo", type: "katakana", group: "w", strokeLevel: "hard", lookalike: true },
-  { char: "ン", romaji: "n", type: "katakana", group: "w", strokeLevel: "mid", lookalike: true },
+  { char: "ワ", romaji: "wa", type: "katakana", group: "w", strokeLevel: "easy", lookalike: true, word: "ワイン", wordRomaji: "wain", meaning: "rượu vang" },
+  { char: "ヲ", romaji: "wo", type: "katakana", group: "w", strokeLevel: "hard", lookalike: true, word: "ヲ", wordRomaji: "o", meaning: "gần như không dùng" },
+  { char: "ン", romaji: "n", type: "katakana", group: "w", strokeLevel: "mid", lookalike: true, word: "パン", wordRomaji: "pan", meaning: "bánh mì" },
 ];
 
 const HIRAGANA_YOON = [
