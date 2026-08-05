@@ -842,19 +842,14 @@ function renderStudyFlashcard() {
 
       <div class="flip-scene w-full aspect-square mb-4 active:scale-[0.98] transition">
         <div id="flip-card-inner" data-action="flip-card" class="flip-card cursor-pointer">
-          <div class="flip-face rounded-3xl bg-card shadow-xl flex items-center justify-center">
-            <span class="text-8xl font-medium text-slate-800 bg-saffron-100 rounded-2xl px-5 py-1">${card.char}</span>
+          <div class="flip-face rounded-3xl bg-card shadow-xl flex flex-col items-center justify-center gap-2 px-5 py-4">
+            <span class="text-7xl font-medium text-slate-800 bg-saffron-100 rounded-2xl px-5 py-1">${card.char}</span>
+            ${card.word ? `<p class="text-2xl font-semibold text-ink tracking-wide mt-1">${highlightChar(card.word, card.char)}</p>` : ""}
+            ${card.meaning ? `<p class="text-sm text-ink-faint text-center">${card.meaning}</p>` : ""}
           </div>
-          <div class="flip-face flip-face--back rounded-3xl bg-card shadow-xl flex flex-col items-center justify-center gap-2 px-5 py-4">
-            <span class="text-6xl font-medium text-ink">${card.char}</span>
-            <span class="text-xl font-medium text-teal-600">${card.romaji}</span>
-            ${card.word
-      ? `<div class="w-full mt-1 pt-3 border-t border-cream-border flex flex-col items-center gap-1 overflow-hidden">
-                     <p class="text-xl font-semibold text-ink tracking-wide">${highlightChar(card.word, card.char)}</p>
-                     <p class="text-xs text-ink-faint text-center">${card.wordRomaji} · ${card.meaning}</p>
-                   </div>`
-      : ""
-    }
+          <div class="flip-face flip-face--back rounded-3xl bg-card shadow-xl flex flex-col items-center justify-center gap-3">
+            <span class="text-7xl font-medium text-ink">${card.char}</span>
+            <span class="text-3xl font-medium text-teal-600">${card.romaji}</span>
           </div>
         </div>
       </div>
